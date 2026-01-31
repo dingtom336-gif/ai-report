@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI周报润色工具</title>
+    <title>周报优化神器</title>
     <style>
         * {
             margin: 0;
@@ -13,210 +13,431 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-            background: #fbfbfd;
+            background: #f5f5f7;
             min-height: 100vh;
             color: #1d1d1f;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 顶部导航 */
-        .nav {
-            background: rgba(251, 251, 253, 0.8);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            border-bottom: 1px solid #d2d2d7;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-content {
-            max-width: 980px;
+        .container {
+            max-width: 800px;
             margin: 0 auto;
-            padding: 0 22px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 40px 20px 80px;
         }
 
-        .nav-title {
-            font-size: 14px;
-            font-weight: 400;
-            color: #1d1d1f;
-            letter-spacing: -0.01em;
-        }
-
-        /* 主内容区 */
-        .hero {
+        /* 标题区 */
+        .header {
             text-align: center;
-            padding: 32px 20px 24px;
-            background: #fff;
+            margin-bottom: 32px;
         }
 
-        .hero h1 {
-            font-size: 40px;
-            font-weight: 600;
-            letter-spacing: -0.015em;
-            line-height: 1.1;
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
             color: #1d1d1f;
             margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
-        .hero p {
+        .header p {
             font-size: 17px;
-            font-weight: 400;
             color: #86868b;
-            letter-spacing: 0.011em;
         }
 
-        .main-content {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 30px 22px 80px;
-        }
-
-        .editor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        .editor-panel {
+        /* 卡片通用样式 */
+        .card {
             background: #fff;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.03);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 范本设置区 - 可折叠 */
+        .template-section {
+            background: #f9f9f9;
+            border: 2px dashed #d2d2d7;
+            border-radius: 16px;
+            margin-bottom: 20px;
             overflow: hidden;
         }
 
-        .panel-header {
-            padding: 20px 24px 16px;
+        .template-header {
+            padding: 16px 24px;
+            cursor: pointer;
             display: flex;
+            align-items: center;
             justify-content: space-between;
+            user-select: none;
+        }
+
+        .template-header:hover {
+            background: #f0f0f0;
+        }
+
+        .template-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1d1d1f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .template-status {
+            font-size: 13px;
+            color: #34c759;
+            display: none;
+        }
+
+        .template-status.show {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .template-toggle {
+            font-size: 13px;
+            color: #0066cc;
+        }
+
+        .template-body {
+            padding: 0 24px 24px;
+            display: none;
+        }
+
+        .template-body.show {
+            display: block;
+        }
+
+        .template-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 14px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            line-height: 1.5;
+            resize: vertical;
+            background: #fff;
+            color: #1d1d1f;
+        }
+
+        .template-textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .template-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
             align-items: center;
         }
 
-        .panel-header h2 {
-            font-size: 17px;
+        .btn-save-template {
+            padding: 10px 20px;
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-save-template:hover {
+            background: #0055aa;
+        }
+
+        .btn-clear-template {
+            padding: 10px 20px;
+            background: transparent;
+            color: #86868b;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear-template:hover {
+            border-color: #ff3b30;
+            color: #ff3b30;
+        }
+
+        /* 风格选择区 */
+        .style-section {
+            margin-bottom: 20px;
+        }
+
+        .section-label {
+            font-size: 15px;
             font-weight: 600;
             color: #1d1d1f;
-            letter-spacing: -0.022em;
+            margin-bottom: 12px;
         }
 
-        .btn-text {
-            font-size: 14px;
-            color: #06c;
-            background: none;
-            border: none;
+        .style-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .style-option {
+            flex: 1;
+            min-width: 200px;
+            padding: 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: 400;
+            transition: all 0.2s;
+            background: #fff;
         }
 
-        .btn-text:hover {
-            text-decoration: underline;
+        .style-option:hover {
+            border-color: #c5c5c5;
         }
 
-        .panel-body {
-            padding: 0 24px 24px;
+        .style-option.selected {
+            border-color: #0066cc;
+            background: rgba(0, 102, 204, 0.04);
         }
 
-        textarea {
+        .style-option input {
+            display: none;
+        }
+
+        .style-option-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .style-option-title::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid #d2d2d7;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .style-option.selected .style-option-title::before {
+            border-color: #0066cc;
+            background: #0066cc;
+            box-shadow: inset 0 0 0 3px #fff;
+        }
+
+        .style-option-desc {
+            font-size: 13px;
+            color: #86868b;
+            margin-left: 22px;
+        }
+
+        /* 使用范本开关 */
+        .use-template-section {
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .use-template-section.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-wrapper input {
+            width: 20px;
+            height: 20px;
+            accent-color: #0066cc;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 15px;
+            color: #1d1d1f;
+        }
+
+        .checkbox-hint {
+            font-size: 13px;
+            color: #86868b;
+            margin-left: auto;
+        }
+
+        /* 输入区 */
+        .input-section .section-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-textarea {
             width: 100%;
-            min-height: 320px;
+            min-height: 200px;
             padding: 16px;
             border: 1px solid #d2d2d7;
             border-radius: 12px;
-            font-size: 17px;
-            line-height: 1.47;
+            font-size: 16px;
             font-family: inherit;
-            resize: none;
-            transition: all 0.2s ease;
+            line-height: 1.6;
+            resize: vertical;
             color: #1d1d1f;
             background: #fff;
         }
 
-        textarea::placeholder {
-            color: #86868b;
-        }
-
-        textarea:focus {
+        .input-textarea:focus {
             outline: none;
-            border-color: #0071e3;
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+            border-color: #0066cc;
+            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
         }
 
-        .output-area {
-            min-height: 320px;
-            padding: 16px;
-            border: 1px solid #d2d2d7;
-            border-radius: 12px;
-            font-size: 17px;
-            line-height: 1.47;
-            background: #f5f5f7;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            color: #1d1d1f;
+        .input-textarea::placeholder {
+            color: #999;
         }
 
-        .output-area.empty {
-            color: #86868b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 操作区 */
-        .action-area {
+        /* 操作按钮 */
+        .action-section {
             text-align: center;
-            margin-top: 40px;
+            margin: 32px 0;
         }
 
-        .btn-primary {
+        .btn-polish {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             min-width: 200px;
-            padding: 16px 32px;
-            background: #0071e3;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
             border: none;
-            border-radius: 980px;
+            border-radius: 30px;
             font-size: 17px;
-            font-weight: 400;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: -0.022em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #0077ed;
+        .btn-polish:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
 
-        .btn-primary:disabled {
-            background: #999;
+        .btn-polish:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .loading {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .spinner {
+        .btn-polish .spinner {
             width: 18px;
             height: 18px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            margin-right: 10px;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* 右侧浮动工具栏 - Apple风格 */
+        /* 输出区 */
+        .output-section {
+            display: none;
+        }
+
+        .output-section.show {
+            display: block;
+        }
+
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .output-content {
+            min-height: 200px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            color: #1d1d1f;
+        }
+
+        .btn-copy {
+            padding: 8px 16px;
+            background: #fff;
+            color: #0066cc;
+            border: 1px solid #0066cc;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: #0066cc;
+            color: #fff;
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #1d1d1f;
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error {
+            background: #ff3b30;
+        }
+
+        .toast.success {
+            background: #34c759;
+        }
+
+        /* 右侧浮动工具栏 */
         .floating-toolbar {
             position: fixed;
             right: 20px;
@@ -244,42 +465,13 @@
 
         .toolbar-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
 
         .toolbar-btn svg {
             width: 22px;
             height: 22px;
             color: #1d1d1f;
-        }
-
-        /* Toast 提示 */
-        .toast {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: #1d1d1f;
-            color: #fff;
-            padding: 14px 24px;
-            border-radius: 980px;
-            font-size: 14px;
-            font-weight: 400;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast.error {
-            background: #ff3b30;
         }
 
         /* 反馈弹窗 */
@@ -289,7 +481,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.48);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -308,12 +500,11 @@
             background: #fff;
             border-radius: 18px;
             width: 90%;
-            max-width: 500px;
+            max-width: 480px;
             max-height: 90vh;
             overflow-y: auto;
             transform: scale(0.95);
             transition: transform 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
         }
 
         .modal-overlay.show .modal {
@@ -328,10 +519,9 @@
         }
 
         .modal-header h3 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
             color: #1d1d1f;
-            letter-spacing: -0.022em;
         }
 
         .modal-close {
@@ -344,7 +534,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s;
         }
 
         .modal-close:hover {
@@ -362,7 +551,7 @@
         }
 
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
@@ -370,8 +559,7 @@
             font-size: 14px;
             font-weight: 600;
             color: #1d1d1f;
-            margin-bottom: 10px;
-            letter-spacing: -0.016em;
+            margin-bottom: 8px;
         }
 
         .form-group .optional {
@@ -381,17 +569,17 @@
 
         .type-selector {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         .type-option {
             flex: 1;
-            padding: 16px 12px;
+            padding: 14px 10px;
             text-align: center;
             border: 1px solid #d2d2d7;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             background: #fff;
         }
 
@@ -400,13 +588,13 @@
         }
 
         .type-option.selected {
-            border-color: #0071e3;
-            background: rgba(0, 113, 227, 0.04);
+            border-color: #0066cc;
+            background: rgba(0, 102, 204, 0.04);
         }
 
         .type-option .icon {
-            font-size: 24px;
-            margin-bottom: 6px;
+            font-size: 22px;
+            margin-bottom: 4px;
         }
 
         .type-option .label {
@@ -417,51 +605,45 @@
 
         .form-input {
             width: 100%;
-            padding: 14px 16px;
+            padding: 12px 14px;
             border: 1px solid #d2d2d7;
-            border-radius: 12px;
-            font-size: 17px;
+            border-radius: 10px;
+            font-size: 15px;
             font-family: inherit;
-            transition: all 0.2s ease;
             color: #1d1d1f;
-        }
-
-        .form-input::placeholder {
-            color: #86868b;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #0071e3;
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
         }
 
         textarea.form-input {
             min-height: 100px;
             resize: vertical;
-            line-height: 1.47;
+            line-height: 1.5;
         }
 
         .btn-submit {
             width: 100%;
-            padding: 16px;
-            background: #0071e3;
+            padding: 14px;
+            background: #0066cc;
             color: #fff;
             border: none;
-            border-radius: 12px;
-            font-size: 17px;
-            font-weight: 400;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: -0.022em;
+            transition: background 0.2s;
         }
 
         .btn-submit:hover:not(:disabled) {
-            background: #0077ed;
+            background: #0055aa;
         }
 
         .btn-submit:disabled {
-            background: #999;
+            opacity: 0.6;
             cursor: not-allowed;
         }
 
@@ -476,9 +658,9 @@
         }
 
         .success-view .icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 20px;
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
             background: #34c759;
             border-radius: 50%;
             display: flex;
@@ -487,48 +669,39 @@
         }
 
         .success-view .icon svg {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             color: #fff;
         }
 
         .success-view h4 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
             color: #1d1d1f;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .success-view p {
-            font-size: 17px;
+            font-size: 15px;
             color: #86868b;
         }
 
+        /* 响应式 */
         @media (max-width: 768px) {
-            .hero {
-                padding: 50px 20px 40px;
+            .container {
+                padding: 24px 16px 60px;
             }
 
-            .hero h1 {
-                font-size: 36px;
+            .header h1 {
+                font-size: 28px;
             }
 
-            .hero p {
-                font-size: 17px;
+            .style-options {
+                flex-direction: column;
             }
 
-            .main-content {
-                padding: 30px 16px 60px;
-            }
-
-            .editor-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            textarea,
-            .output-area {
-                min-height: 240px;
+            .style-option {
+                min-width: 100%;
             }
 
             .floating-toolbar {
@@ -539,49 +712,112 @@
                 width: 44px;
                 height: 44px;
             }
+
+            .use-template-section {
+                flex-wrap: wrap;
+            }
+
+            .checkbox-hint {
+                width: 100%;
+                margin-left: 30px;
+                margin-top: 4px;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <span class="nav-title">AI 周报润色工具</span>
-        </div>
-    </nav>
+    <div class="container">
+        <!-- 标题区 -->
+        <header class="header">
+            <h1>周报优化神器</h1>
+            <p>随便写，AI帮你变成P9视角的专业周报</p>
+        </header>
 
-    <section class="hero">
-        <h1>周报优化神器</h1>
-        <p>你随意写，剩下交给我吧</p>
-    </section>
-
-    <main class="main-content">
-        <div class="editor-grid">
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <h2>原始周报</h2>
-                    <button class="btn-text" onclick="clearInput()">清空</button>
+        <!-- 范本设置区 -->
+        <div class="template-section" id="templateSection">
+            <div class="template-header" onclick="toggleTemplate()">
+                <div class="template-title">
+                    <span>📋 我的周报范本（可选）</span>
+                    <span class="template-status" id="templateStatus">✓ 已保存范本</span>
                 </div>
-                <div class="panel-body">
-                    <textarea id="input" placeholder="在这里输入你的周报内容..."></textarea>
+                <span class="template-toggle" id="templateToggle">展开</span>
+            </div>
+            <div class="template-body" id="templateBody">
+                <textarea
+                    class="template-textarea"
+                    id="templateInput"
+                    placeholder="粘贴一份你满意的周报作为参考范例...
+
+AI 会学习这份范本的：
+- 结构和分段方式
+- 语气和措辞风格
+- 专业程度和表达习惯"></textarea>
+                <div class="template-actions">
+                    <button class="btn-save-template" onclick="saveTemplate()">保存范本</button>
+                    <button class="btn-clear-template" onclick="clearTemplate()">清除</button>
                 </div>
             </div>
+        </div>
 
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <h2>润色结果</h2>
-                    <button class="btn-text" id="copyBtn" onclick="copyResult()">复制</button>
-                </div>
-                <div class="panel-body">
-                    <div class="output-area empty" id="output">润色后的内容将在这里显示</div>
-                </div>
+        <!-- 改写风格选择 -->
+        <div class="card style-section">
+            <div class="section-label">改写风格</div>
+            <div class="style-options">
+                <label class="style-option selected" data-style="stable">
+                    <input type="radio" name="style" value="stable" checked>
+                    <div class="style-option-title">稳健务实</div>
+                    <div class="style-option-desc">适合常规周报，客观陈述进展</div>
+                </label>
+                <label class="style-option" data-style="achievement">
+                    <input type="radio" name="style" value="achievement">
+                    <div class="style-option-title">突出成果</div>
+                    <div class="style-option-desc">适合晋升期、绩效季，强调价值</div>
+                </label>
+                <label class="style-option" data-style="risk">
+                    <input type="radio" name="style" value="risk">
+                    <div class="style-option-title">风险预警</div>
+                    <div class="style-option-desc">适合项目有问题时，争取支持</div>
+                </label>
             </div>
         </div>
 
-        <div class="action-area">
-            <button class="btn-primary" id="polishBtn" onclick="polish()">开始润色</button>
+        <!-- 使用范本开关 -->
+        <div class="use-template-section disabled" id="useTemplateSection">
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="useTemplateCheckbox" disabled>
+                <span class="checkbox-label">使用我的范本风格</span>
+            </label>
+            <span class="checkbox-hint" id="templateHint">请先保存范本</span>
         </div>
-    </main>
 
+        <!-- 输入区 -->
+        <div class="card input-section">
+            <div class="section-label">✏️ 随便写，不用管格式</div>
+            <textarea
+                class="input-textarea"
+                id="contentInput"
+                placeholder="把本周做的事情随便写，比如：
+
+这周主要在跟A项目，需求评审过了
+和研发对了下排期，大概下周能提测
+还参加了两个跨部门会议，讨论了下Q2规划
+老板让我调研下竞品，写了个初步分析"></textarea>
+        </div>
+
+        <!-- 润色按钮 -->
+        <div class="action-section">
+            <button class="btn-polish" id="polishBtn" onclick="polish()">开始润色</button>
+        </div>
+
+        <!-- 输出区 -->
+        <div class="card output-section" id="outputSection">
+            <div class="output-header">
+                <div class="section-label">润色结果</div>
+                <button class="btn-copy" onclick="copyResult()">复制</button>
+            </div>
+            <div class="output-content" id="outputContent"></div>
+        </div>
+    </div>
 
     <!-- 右侧浮动工具栏 -->
     <div class="floating-toolbar">
@@ -592,6 +828,7 @@
         </button>
     </div>
 
+    <!-- Toast 提示 -->
     <div class="toast" id="toast"></div>
 
     <!-- 反馈弹窗 -->
@@ -652,30 +889,100 @@
     </div>
 
     <script>
-        const inputEl = document.getElementById('input');
-        const outputEl = document.getElementById('output');
-        const polishBtn = document.getElementById('polishBtn');
-        const copyBtn = document.getElementById('copyBtn');
+        // ========== 范本功能 ==========
+        const TEMPLATE_KEY = 'weekly_report_template';
+        let templateExpanded = false;
 
+        function initTemplate() {
+            const saved = localStorage.getItem(TEMPLATE_KEY);
+            if (saved) {
+                document.getElementById('templateInput').value = saved;
+                document.getElementById('templateStatus').classList.add('show');
+                enableUseTemplate();
+            }
+        }
+
+        function toggleTemplate() {
+            templateExpanded = !templateExpanded;
+            document.getElementById('templateBody').classList.toggle('show', templateExpanded);
+            document.getElementById('templateToggle').textContent = templateExpanded ? '收起' : '展开';
+        }
+
+        function saveTemplate() {
+            const template = document.getElementById('templateInput').value.trim();
+            if (!template) {
+                showToast('请先输入范本内容', 'error');
+                return;
+            }
+            localStorage.setItem(TEMPLATE_KEY, template);
+            document.getElementById('templateStatus').classList.add('show');
+            enableUseTemplate();
+            showToast('范本已保存', 'success');
+        }
+
+        function clearTemplate() {
+            localStorage.removeItem(TEMPLATE_KEY);
+            document.getElementById('templateInput').value = '';
+            document.getElementById('templateStatus').classList.remove('show');
+            disableUseTemplate();
+            showToast('范本已清除');
+        }
+
+        function enableUseTemplate() {
+            const section = document.getElementById('useTemplateSection');
+            const checkbox = document.getElementById('useTemplateCheckbox');
+            const hint = document.getElementById('templateHint');
+            section.classList.remove('disabled');
+            checkbox.disabled = false;
+            hint.textContent = '勾选后将参考你的范本风格';
+        }
+
+        function disableUseTemplate() {
+            const section = document.getElementById('useTemplateSection');
+            const checkbox = document.getElementById('useTemplateCheckbox');
+            const hint = document.getElementById('templateHint');
+            section.classList.add('disabled');
+            checkbox.disabled = true;
+            checkbox.checked = false;
+            hint.textContent = '请先保存范本';
+        }
+
+        // ========== 风格选择 ==========
+        document.querySelectorAll('.style-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                option.querySelector('input').checked = true;
+            });
+        });
+
+        function getSelectedStyle() {
+            const checked = document.querySelector('input[name="style"]:checked');
+            return checked ? checked.value : 'stable';
+        }
+
+        // ========== 润色功能 ==========
         async function polish() {
-            const content = inputEl.value.trim();
-
+            const content = document.getElementById('contentInput').value.trim();
             if (!content) {
                 showToast('请输入周报内容', 'error');
-                inputEl.focus();
+                document.getElementById('contentInput').focus();
                 return;
             }
 
-            polishBtn.disabled = true;
-            polishBtn.innerHTML = '<span class="loading"><span class="spinner"></span>润色中</span>';
-            outputEl.textContent = '正在润色，请稍候...';
-            outputEl.classList.add('empty');
+            const btn = document.getElementById('polishBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>润色中...';
+
+            const style = getSelectedStyle();
+            const useTemplate = document.getElementById('useTemplateCheckbox').checked;
+            const template = useTemplate ? localStorage.getItem(TEMPLATE_KEY) : null;
 
             try {
                 const response = await fetch('/api/polish', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content }),
+                    body: JSON.stringify({ content, template, useTemplate, style })
                 });
 
                 const data = await response.json();
@@ -684,57 +991,47 @@
                     throw new Error(data.error || '润色失败');
                 }
 
-                outputEl.textContent = data.result;
-                outputEl.classList.remove('empty');
-                showToast('润色完成');
+                document.getElementById('outputContent').textContent = data.result;
+                document.getElementById('outputSection').classList.add('show');
+                document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showToast('润色完成', 'success');
             } catch (error) {
-                outputEl.textContent = '润色失败，请重试';
-                outputEl.classList.add('empty');
                 showToast(error.message, 'error');
             } finally {
-                polishBtn.disabled = false;
-                polishBtn.innerHTML = '开始润色';
+                btn.disabled = false;
+                btn.innerHTML = '开始润色';
             }
         }
 
         async function copyResult() {
-            const content = outputEl.textContent;
-            if (outputEl.classList.contains('empty')) return;
+            const content = document.getElementById('outputContent').textContent;
+            if (!content) return;
 
             try {
                 await navigator.clipboard.writeText(content);
-                showToast('已复制');
+                showToast('已复制到剪贴板', 'success');
             } catch (err) {
+                // fallback
                 const textarea = document.createElement('textarea');
                 textarea.value = content;
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-                showToast('已复制');
+                showToast('已复制到剪贴板', 'success');
             }
         }
 
-        function clearInput() {
-            inputEl.value = '';
-            inputEl.focus();
-        }
-
-        function showToast(message, type = 'success') {
+        // ========== Toast 提示 ==========
+        function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = 'toast' + (type === 'error' ? ' error' : '');
+            toast.className = 'toast' + (type ? ' ' + type : '');
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+            setTimeout(() => toast.classList.remove('show'), 2500);
         }
 
-        inputEl.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                polish();
-            }
-        });
-
-        // 反馈功能
+        // ========== 反馈功能 ==========
         let selectedFeedbackType = 'bug';
 
         function openFeedback() {
@@ -806,6 +1103,16 @@
                 submitBtn.textContent = '提交反馈';
             }
         });
+
+        // ========== 快捷键 ==========
+        document.getElementById('contentInput').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                polish();
+            }
+        });
+
+        // ========== 初始化 ==========
+        initTemplate();
     </script>
 </body>
 </html>

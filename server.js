@@ -44,8 +44,95 @@ const proxyUrl = process.env.HTTP_PROXY || process.env.https_proxy || process.en
 const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : null;
 console.log('Proxy:', proxyUrl || 'disabled');
 
+// 风格描述映射
+const STYLE_DESC = {
+  stable: '稳健务实：客观陈述进展和计划，语气平稳专业',
+  achievement: '突出成果：强调个人贡献和价值产出，适合晋升期/绩效季',
+  risk: '风险预警：着重说明问题和所需支持，适合项目有风险时'
+};
+
+// 构建 Prompt
+function buildPrompt(content, template, useTemplate, style) {
+  const styleDesc = STYLE_DESC[style] || STYLE_DESC.stable;
+
+  if (useTemplate && template) {
+    // 有范本时的 Prompt
+    return `你是互联网大厂P9产品总监。
+
+【任务】
+将用户的随意输入，改写成结构化的高质量周报。
+
+【用户提供的范本】
+以下是用户认可的周报风格，请学习其结构、语气、表达方式：
+"""
+${template}
+"""
+
+【改写要求】
+1. 模仿范本的结构和分段方式
+2. 学习范本的语气和措辞风格
+3. 保持范本的专业程度
+4. 从用户输入中提取关键信息，按范本格式重组
+5. 补充量化数据（如用户未提供，用[待补充]标记）
+
+【当前风格要求】
+${styleDesc}
+
+【用户原始输入】
+"""
+${content}
+"""
+
+请输出改写后的周报：`;
+  } else {
+    // 无范本时的 Prompt
+    return `你是互联网大厂P9产品总监，带过50人团队，深谙向上汇报的艺术。
+
+【你的任务】
+将产品经理的周报草稿改写成能让老板看到价值的高质量周报。
+
+【PM周报常见问题】
+- 只写了"做了什么"，没写"产出了什么"
+- 缺少数据支撑，成果不可衡量
+- 项目进度不清晰，老板无法判断风险
+- 语言啰嗦，重点不突出
+
+【改写原则】
+1. 成果量化：用数字说话（完成率、提升比例、影响用户数）
+2. 价值前置：先说结果，再说过程
+3. 风险透明：主动暴露问题比被动发现强
+4. 简洁有力：每条控制在1-2行，删除所有废话
+
+【当前风格要求】
+${styleDesc}
+
+【输出格式】
+## 本周成果
+- [量化成果1]
+- [量化成果2]
+
+## 重点进展
+- [项目A]：当前阶段 → 下一里程碑（预计时间）
+- [项目B]：当前阶段 → 下一里程碑（预计时间）
+
+## 下周计划
+- [可衡量目标1]
+- [可衡量目标2]
+
+## 风险与协调（如有）
+- [问题]：需要[谁][做什么]
+
+【改写示例】
+原文：这周跟进了A项目的开发进度，感觉有点慢
+改写：A项目开发进度75%，较计划延迟2天，已协调增加1名后端资源，预计下周三完成联调
+
+现在改写以下内容：
+${content}`;
+  }
+}
+
 // 调用 DeepSeek API
-function callDeepSeekAPI(content) {
+function callDeepSeekAPI(prompt) {
   return new Promise((resolve, reject) => {
     const apiKey = process.env.DEEPSEEK_API_KEY;
 
@@ -54,14 +141,7 @@ function callDeepSeekAPI(content) {
       messages: [
         {
           role: 'user',
-          content: `你是一位专业的职场写作顾问。请润色以下周报，要求：
-1. 语言更专业、简洁
-2. 突出成果和价值
-3. 保持原意不变
-4. 使用纯文本格式输出，不要使用 Markdown 符号（如 *、**、# 等）
-
-周报内容：
-${content}`
+          content: prompt
         }
       ]
     });
@@ -107,7 +187,7 @@ ${content}`
 
 // 润色接口
 app.post('/api/polish', async (req, res) => {
-  const { content } = req.body;
+  const { content, template, useTemplate, style } = req.body;
 
   if (!content || !content.trim()) {
     return res.status(400).json({ error: '请输入周报内容' });
@@ -118,8 +198,13 @@ app.post('/api/polish', async (req, res) => {
     return res.status(500).json({ error: 'API Key 未配置，请在 .env 文件中设置 DEEPSEEK_API_KEY' });
   }
 
+  // 验证 style 参数
+  const validStyles = ['stable', 'achievement', 'risk'];
+  const finalStyle = validStyles.includes(style) ? style : 'stable';
+
   try {
-    const data = await callDeepSeekAPI(content);
+    const prompt = buildPrompt(content, template, useTemplate, finalStyle);
+    const data = await callDeepSeekAPI(prompt);
     const result = data.choices[0].message.content;
     res.json({ result });
   } catch (error) {
