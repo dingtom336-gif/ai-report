@@ -19,6 +19,22 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(express.json());
+
+// 检测移动设备
+function isMobile(userAgent) {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+}
+
+// 根据设备类型返回不同页面
+app.get('/', (req, res) => {
+  const userAgent = req.headers['user-agent'] || '';
+  if (isMobile(userAgent)) {
+    res.sendFile(join(__dirname, 'public', 'mobile.html'));
+  } else {
+    res.sendFile(join(__dirname, 'public', 'index.html'));
+  }
+});
+
 app.use(express.static(join(__dirname, 'public')));
 
 // 代理配置（本地开发需要，生产环境不需要）
