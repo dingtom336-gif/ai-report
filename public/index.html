@@ -12,181 +12,202 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+            background: #fbfbfd;
             min-height: 100vh;
-            padding: 40px 20px;
-            color: #333;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container {
-            max-width: 1200px;
+        /* 顶部导航 */
+        .nav {
+            background: rgba(251, 251, 253, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid #d2d2d7;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            max-width: 980px;
             margin: 0 auto;
+            padding: 0 22px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        h1 {
-            text-align: center;
-            color: #1a1a2e;
-            margin-bottom: 8px;
-            font-size: 28px;
-            font-weight: 600;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 32px;
+        .nav-title {
             font-size: 14px;
+            font-weight: 400;
+            color: #1d1d1f;
+            letter-spacing: -0.01em;
         }
 
-        .editor-wrapper {
-            display: flex;
-            gap: 20px;
-            align-items: stretch;
-        }
-
-        .panel {
-            flex: 1;
+        /* 主内容区 */
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
             background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            display: flex;
-            flex-direction: column;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            line-height: 1.07;
+            color: #1d1d1f;
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            font-size: 21px;
+            font-weight: 400;
+            color: #86868b;
+            letter-spacing: 0.011em;
+        }
+
+        .main-content {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 60px 22px 80px;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .editor-panel {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.03);
             overflow: hidden;
         }
 
         .panel-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #eee;
+            padding: 20px 24px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .panel-header h2 {
-            font-size: 16px;
-            color: #1a1a2e;
-            font-weight: 500;
+            font-size: 17px;
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.022em;
+        }
+
+        .btn-text {
+            font-size: 14px;
+            color: #06c;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .btn-text:hover {
+            text-decoration: underline;
         }
 
         .panel-body {
-            flex: 1;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
+            padding: 0 24px 24px;
         }
 
         textarea {
-            flex: 1;
             width: 100%;
-            min-height: 400px;
+            min-height: 320px;
             padding: 16px;
-            border: 1px solid #e0e4e8;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.8;
-            resize: none;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 17px;
+            line-height: 1.47;
             font-family: inherit;
-            transition: border-color 0.2s;
+            resize: none;
+            transition: all 0.2s ease;
+            color: #1d1d1f;
+            background: #fff;
+        }
+
+        textarea::placeholder {
+            color: #86868b;
         }
 
         textarea:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
         }
 
         .output-area {
-            flex: 1;
-            min-height: 400px;
+            min-height: 320px;
             padding: 16px;
-            border: 1px solid #e0e4e8;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.8;
-            background: #fafafa;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 17px;
+            line-height: 1.47;
+            background: #f5f5f7;
             white-space: pre-wrap;
             overflow-y: auto;
+            color: #1d1d1f;
         }
 
         .output-area.empty {
-            color: #999;
+            color: #86868b;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .action-column {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 12px;
-            padding: 0 8px;
-        }
-
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
+        /* 操作区 */
+        .action-area {
+            text-align: center;
+            margin-top: 40px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 200px;
+            padding: 16px 32px;
+            background: #0071e3;
             color: #fff;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            border: none;
+            border-radius: 980px;
+            font-size: 17px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.022em;
         }
 
         .btn-primary:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+            background: #0077ed;
         }
 
         .btn-primary:disabled {
-            opacity: 0.6;
+            background: #999;
             cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: #fff;
-            color: #6366f1;
-            border: 1px solid #6366f1;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #f5f3ff;
-        }
-
-        .btn-secondary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-copy {
-            padding: 6px 12px;
-            font-size: 13px;
-            background: #f0f0f0;
-            color: #555;
-        }
-
-        .btn-copy:hover {
-            background: #e0e0e0;
         }
 
         .loading {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -195,87 +216,87 @@
             to { transform: rotate(360deg); }
         }
 
+        /* 右侧浮动工具栏 - Apple风格 */
+        .floating-toolbar {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 900;
+        }
+
+        .toolbar-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #fff;
+            border: none;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+        }
+
+        .toolbar-btn svg {
+            width: 22px;
+            height: 22px;
+            color: #1d1d1f;
+        }
+
+        /* Toast 提示 */
         .toast {
             position: fixed;
-            top: 20px;
+            top: 80px;
             left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: #1a1a2e;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1d1d1f;
             color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 24px;
+            border-radius: 980px;
             font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s ease;
+            font-weight: 400;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
             z-index: 1000;
         }
 
         .toast.show {
+            opacity: 1;
+            visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
 
         .toast.error {
-            background: #ef4444;
+            background: #ff3b30;
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 20px 16px;
-            }
-
-            .editor-wrapper {
-                flex-direction: column;
-            }
-
-            .action-column {
-                flex-direction: row;
-                justify-content: center;
-                padding: 16px 0;
-            }
-
-            textarea,
-            .output-area {
-                min-height: 250px;
-            }
-        }
-
-        /* 反馈按钮和弹窗样式 */
-        .feedback-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s;
-            z-index: 900;
-        }
-
-        .feedback-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
+        /* 反馈弹窗 */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.48);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
         }
 
         .modal-overlay.show {
@@ -285,44 +306,55 @@
 
         .modal {
             background: #fff;
-            border-radius: 16px;
+            border-radius: 18px;
             width: 90%;
-            max-width: 480px;
+            max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
-            transform: translateY(20px);
-            transition: transform 0.3s;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
         }
 
         .modal-overlay.show .modal {
-            transform: translateY(0);
+            transform: scale(1);
         }
 
         .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #eee;
+            padding: 24px 24px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-header h3 {
-            font-size: 18px;
-            color: #1a1a2e;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.022em;
         }
 
         .modal-close {
-            background: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e8e8ed;
             border: none;
-            font-size: 24px;
-            color: #999;
             cursor: pointer;
-            padding: 0;
-            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
         }
 
         .modal-close:hover {
-            color: #333;
+            background: #d2d2d7;
+        }
+
+        .modal-close svg {
+            width: 14px;
+            height: 14px;
+            color: #86868b;
         }
 
         .modal-body {
@@ -330,101 +362,112 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
             font-size: 14px;
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 10px;
+            letter-spacing: -0.016em;
         }
 
         .form-group .optional {
-            color: #999;
-            font-weight: normal;
+            color: #86868b;
+            font-weight: 400;
         }
 
         .type-selector {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .type-option {
             flex: 1;
-            padding: 12px 8px;
+            padding: 16px 12px;
             text-align: center;
-            border: 2px solid #e8e8e8;
-            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            background: #fff;
         }
 
         .type-option:hover {
-            border-color: #6366f1;
+            border-color: #86868b;
         }
 
         .type-option.selected {
-            border-color: #6366f1;
-            background: #f5f3ff;
+            border-color: #0071e3;
+            background: rgba(0, 113, 227, 0.04);
         }
 
         .type-option .icon {
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 24px;
+            margin-bottom: 6px;
         }
 
         .type-option .label {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
+            color: #1d1d1f;
+            font-weight: 500;
         }
 
         .form-input {
             width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 14px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 17px;
             font-family: inherit;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
+            color: #1d1d1f;
+        }
+
+        .form-input::placeholder {
+            color: #86868b;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
         }
 
         textarea.form-input {
             min-height: 100px;
             resize: vertical;
+            line-height: 1.47;
         }
 
         .btn-submit {
             width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            background: #0071e3;
             color: #fff;
-            transition: all 0.2s;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.022em;
         }
 
         .btn-submit:hover:not(:disabled) {
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #0077ed;
         }
 
         .btn-submit:disabled {
-            opacity: 0.6;
+            background: #999;
             cursor: not-allowed;
         }
 
         .success-view {
             text-align: center;
-            padding: 20px 0;
+            padding: 40px 20px;
             display: none;
         }
 
@@ -433,76 +476,159 @@
         }
 
         .success-view .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: #34c759;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-view .icon svg {
+            width: 32px;
+            height: 32px;
+            color: #fff;
         }
 
         .success-view h4 {
-            color: #333;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d1d1f;
             margin-bottom: 8px;
         }
 
         .success-view p {
-            color: #666;
-            font-size: 14px;
+            font-size: 17px;
+            color: #86868b;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: #f5f5f7;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #d2d2d7;
+        }
+
+        .footer p {
+            font-size: 12px;
+            color: #86868b;
+        }
+
+        .footer a {
+            color: #06c;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 50px 20px 40px;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 17px;
+            }
+
+            .main-content {
+                padding: 30px 16px 60px;
+            }
+
+            .editor-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            textarea,
+            .output-area {
+                min-height: 240px;
+            }
+
+            .floating-toolbar {
+                right: 12px;
+            }
+
+            .toolbar-btn {
+                width: 44px;
+                height: 44px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>AI周报润色工具</h1>
-        <p class="subtitle">使用 Claude AI 让您的周报更专业、更有价值</p>
+    <nav class="nav">
+        <div class="nav-content">
+            <span class="nav-title">AI 周报润色工具</span>
+        </div>
+    </nav>
 
-        <div class="editor-wrapper">
-            <div class="panel">
+    <section class="hero">
+        <h1>周报润色</h1>
+        <p>让 AI 帮你把周报写得更专业</p>
+    </section>
+
+    <main class="main-content">
+        <div class="editor-grid">
+            <div class="editor-panel">
                 <div class="panel-header">
                     <h2>原始周报</h2>
-                    <button class="btn-copy" onclick="clearInput()">清空</button>
+                    <button class="btn-text" onclick="clearInput()">清空</button>
                 </div>
                 <div class="panel-body">
-                    <textarea id="input" placeholder="在此粘贴您的周报内容...
-
-例如：
-本周完成：
-1. 做了用户调研
-2. 写了需求文档
-3. 开了几个会
-
-下周计划：
-1. 继续推进项目
-2. 跟进开发进度"></textarea>
+                    <textarea id="input" placeholder="在这里输入你的周报内容..."></textarea>
                 </div>
             </div>
 
-            <div class="action-column">
-                <button class="btn-primary" id="polishBtn" onclick="polish()">
-                    AI 润色
-                </button>
-            </div>
-
-            <div class="panel">
+            <div class="editor-panel">
                 <div class="panel-header">
                     <h2>润色结果</h2>
-                    <button class="btn-copy" id="copyBtn" onclick="copyResult()" disabled>复制</button>
+                    <button class="btn-text" id="copyBtn" onclick="copyResult()">复制</button>
                 </div>
                 <div class="panel-body">
-                    <div class="output-area empty" id="output">润色结果将显示在这里</div>
+                    <div class="output-area empty" id="output">润色后的内容将在这里显示</div>
                 </div>
             </div>
         </div>
+
+        <div class="action-area">
+            <button class="btn-primary" id="polishBtn" onclick="polish()">开始润色</button>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>基于 AI 技术 · <a href="/admin.html">管理后台</a></p>
+    </footer>
+
+    <!-- 右侧浮动工具栏 -->
+    <div class="floating-toolbar">
+        <button class="toolbar-btn" onclick="openFeedback()" title="意见反馈">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
+            </svg>
+        </button>
     </div>
 
     <div class="toast" id="toast"></div>
-
-    <!-- 反馈按钮 -->
-    <button class="feedback-btn" onclick="openFeedback()" title="意见反馈">💬</button>
 
     <!-- 反馈弹窗 -->
     <div class="modal-overlay" id="feedbackModal" onclick="closeFeedbackOnOverlay(event)">
         <div class="modal">
             <div class="modal-header">
                 <h3>意见反馈</h3>
-                <button class="modal-close" onclick="closeFeedback()">&times;</button>
+                <button class="modal-close" onclick="closeFeedback()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="feedbackForm">
@@ -538,9 +664,13 @@
                     <button type="submit" class="btn-submit" id="feedbackSubmitBtn">提交反馈</button>
                 </form>
                 <div class="success-view" id="feedbackSuccess">
-                    <div class="icon">🎉</div>
-                    <h4>提交成功！</h4>
-                    <p>感谢您的反馈，我们会尽快处理</p>
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <h4>提交成功</h4>
+                    <p>感谢您的反馈</p>
                 </div>
             </div>
         </div>
@@ -561,18 +691,15 @@
                 return;
             }
 
-            // 显示 loading 状态
             polishBtn.disabled = true;
-            polishBtn.innerHTML = '<span class="loading"><span class="spinner"></span>润色中...</span>';
+            polishBtn.innerHTML = '<span class="loading"><span class="spinner"></span>润色中</span>';
             outputEl.textContent = '正在润色，请稍候...';
             outputEl.classList.add('empty');
 
             try {
                 const response = await fetch('/api/polish', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content }),
                 });
 
@@ -584,7 +711,6 @@
 
                 outputEl.textContent = data.result;
                 outputEl.classList.remove('empty');
-                copyBtn.disabled = false;
                 showToast('润色完成');
             } catch (error) {
                 outputEl.textContent = '润色失败，请重试';
@@ -592,20 +718,17 @@
                 showToast(error.message, 'error');
             } finally {
                 polishBtn.disabled = false;
-                polishBtn.innerHTML = 'AI 润色';
+                polishBtn.innerHTML = '开始润色';
             }
         }
 
         async function copyResult() {
             const content = outputEl.textContent;
-
-            if (outputEl.classList.contains('empty')) {
-                return;
-            }
+            if (outputEl.classList.contains('empty')) return;
 
             try {
                 await navigator.clipboard.writeText(content);
-                showToast('已复制到剪贴板');
+                showToast('已复制');
             } catch (err) {
                 const textarea = document.createElement('textarea');
                 textarea.value = content;
@@ -613,7 +736,7 @@
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-                showToast('已复制到剪贴板');
+                showToast('已复制');
             }
         }
 
@@ -627,13 +750,9 @@
             toast.textContent = message;
             toast.className = 'toast' + (type === 'error' ? ' error' : '');
             toast.classList.add('show');
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
-        // 快捷键支持
         inputEl.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 polish();
@@ -651,7 +770,6 @@
         function closeFeedback() {
             document.getElementById('feedbackModal').classList.remove('show');
             document.body.style.overflow = '';
-            // 重置表单
             setTimeout(() => {
                 document.getElementById('feedbackForm').reset();
                 document.getElementById('feedbackForm').style.display = 'block';
@@ -692,21 +810,12 @@
                 const response = await fetch('/api/feedback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: selectedFeedbackType,
-                        title,
-                        description,
-                        contact
-                    })
+                    body: JSON.stringify({ type: selectedFeedbackType, title, description, contact })
                 });
 
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.error || '提交失败');
 
-                if (!response.ok) {
-                    throw new Error(data.error || '提交失败');
-                }
-
-                // 存储ID到localStorage
                 const ids = JSON.parse(localStorage.getItem('feedback_ids') || '[]');
                 ids.unshift(data.id);
                 localStorage.setItem('feedback_ids', JSON.stringify(ids.slice(0, 50)));

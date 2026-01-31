@@ -12,58 +12,134 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+            background: #f5f5f7;
             min-height: 100vh;
-            color: #333;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .header {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            padding: 20px 16px;
-            color: #fff;
-            text-align: center;
+        /* 顶部导航 */
+        .nav {
+            background: rgba(245, 245, 247, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
             position: sticky;
             top: 0;
             z-index: 100;
+            padding: env(safe-area-inset-top) 0 0;
         }
 
-        .header h1 {
-            font-size: 20px;
+        .nav-content {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        .nav-title {
+            font-size: 17px;
             font-weight: 600;
-            margin-bottom: 4px;
+            color: #1d1d1f;
+            letter-spacing: -0.022em;
         }
 
-        .header p {
-            font-size: 12px;
-            opacity: 0.9;
+        .nav-link {
+            font-size: 17px;
+            color: #06c;
+            text-decoration: none;
         }
 
+        /* Hero区域 */
+        .hero {
+            background: #fff;
+            padding: 40px 20px 30px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            line-height: 1.1;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: #86868b;
+            letter-spacing: 0.011em;
+        }
+
+        /* 主内容区 */
         .container {
-            padding: 16px;
-            padding-bottom: 100px;
+            padding: 20px 16px;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom));
+        }
+
+        /* 分段控制 */
+        .segmented-control {
+            display: flex;
+            background: rgba(118, 118, 128, 0.12);
+            border-radius: 9px;
+            padding: 2px;
+            margin-bottom: 20px;
+        }
+
+        .segment {
+            flex: 1;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1d1d1f;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .segment.active {
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 面板 */
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
         }
 
         .card {
             background: #fff;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            margin-bottom: 16px;
             overflow: hidden;
         }
 
         .card-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
         }
 
         .card-header h2 {
             font-size: 15px;
-            font-weight: 500;
-            color: #1a1a2e;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .btn-text {
+            font-size: 15px;
+            color: #06c;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
 
         .card-body {
@@ -72,56 +148,49 @@
 
         textarea {
             width: 100%;
-            min-height: 180px;
+            min-height: 200px;
             padding: 12px;
-            border: 1px solid #e8e8e8;
-            border-radius: 8px;
-            font-size: 15px;
-            line-height: 1.6;
-            resize: none;
+            border: none;
+            border-radius: 10px;
+            background: #f5f5f7;
+            font-size: 17px;
+            line-height: 1.47;
             font-family: inherit;
+            resize: none;
+            color: #1d1d1f;
             -webkit-appearance: none;
+        }
+
+        textarea::placeholder {
+            color: #86868b;
         }
 
         textarea:focus {
             outline: none;
-            border-color: #6366f1;
+            background: #ebebf0;
         }
 
         .output-area {
-            min-height: 180px;
+            min-height: 200px;
             padding: 12px;
-            border: 1px solid #e8e8e8;
-            border-radius: 8px;
-            font-size: 15px;
-            line-height: 1.6;
-            background: #fafafa;
+            border-radius: 10px;
+            background: #f5f5f7;
+            font-size: 17px;
+            line-height: 1.47;
             white-space: pre-wrap;
             word-break: break-word;
+            color: #1d1d1f;
         }
 
         .output-area.empty {
-            color: #999;
+            color: #86868b;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
         }
 
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 13px;
-            background: #f5f5f5;
-            color: #666;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .btn-small:active {
-            background: #e8e8e8;
-        }
-
+        /* 底部操作栏 */
         .bottom-bar {
             position: fixed;
             bottom: 0;
@@ -129,31 +198,33 @@
             right: 0;
             padding: 12px 16px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            background: #fff;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+            background: rgba(245, 245, 247, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top: 0.5px solid rgba(60, 60, 67, 0.12);
             z-index: 100;
         }
 
         .btn-primary {
             width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 16px;
+            background: #0071e3;
             color: #fff;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 400;
+            cursor: pointer;
+            letter-spacing: -0.022em;
+            transition: background 0.2s;
         }
 
         .btn-primary:active:not(:disabled) {
-            transform: scale(0.98);
+            background: #0077ed;
         }
 
         .btn-primary:disabled {
-            opacity: 0.6;
+            background: #999;
         }
 
         .loading {
@@ -166,8 +237,8 @@
         .spinner {
             width: 18px;
             height: 18px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -176,78 +247,34 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Toast */
         .toast {
             position: fixed;
-            top: 80px;
+            top: calc(60px + env(safe-area-inset-top));
             left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: #1a1a2e;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1d1d1f;
             color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 980px;
             font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s ease;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
             z-index: 1000;
-            max-width: 80%;
+            max-width: 85%;
             text-align: center;
         }
 
         .toast.show {
+            opacity: 1;
+            visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
 
         .toast.error {
-            background: #ef4444;
-        }
-
-        .tabs {
-            display: flex;
-            background: #fff;
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: #fff;
-        }
-
-        .panel {
-            display: none;
-        }
-
-        .panel.active {
-            display: block;
-        }
-
-        /* 反馈入口 */
-        .feedback-link {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255,255,255,0.9);
-            font-size: 13px;
-            text-decoration: none;
-        }
-
-        .header {
-            position: relative;
+            background: #ff3b30;
         }
 
         /* 反馈弹窗 */
@@ -257,7 +284,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: flex-end;
             z-index: 1000;
@@ -272,13 +299,13 @@
         }
 
         .modal {
-            background: #fff;
-            border-radius: 16px 16px 0 0;
+            background: #f2f2f7;
+            border-radius: 12px 12px 0 0;
             width: 100%;
-            max-height: 85vh;
+            max-height: 90vh;
             overflow-y: auto;
             transform: translateY(100%);
-            transition: transform 0.3s;
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
             padding-bottom: env(safe-area-inset-bottom);
         }
 
@@ -287,50 +314,51 @@
         }
 
         .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #eee;
+            padding: 20px 16px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+            background: #f2f2f7;
             position: sticky;
             top: 0;
-            background: #fff;
         }
 
         .modal-header h3 {
             font-size: 17px;
-            color: #1a1a2e;
+            font-weight: 600;
+            color: #1d1d1f;
         }
 
         .modal-close {
+            font-size: 17px;
+            color: #06c;
             background: none;
             border: none;
-            font-size: 28px;
-            color: #999;
             cursor: pointer;
-            padding: 0;
-            line-height: 1;
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 16px;
+            background: #fff;
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #333;
+            font-size: 13px;
+            font-weight: 400;
+            color: #86868b;
             margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
 
         .form-group .optional {
-            color: #999;
-            font-weight: normal;
+            text-transform: none;
         }
 
         .type-selector {
@@ -340,66 +368,78 @@
 
         .type-option {
             flex: 1;
-            padding: 12px 8px;
+            padding: 14px 10px;
             text-align: center;
-            border: 2px solid #e8e8e8;
-            border-radius: 10px;
+            background: #f5f5f7;
+            border: 2px solid transparent;
+            border-radius: 12px;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .type-option.selected {
-            border-color: #6366f1;
-            background: #f5f3ff;
+            border-color: #0071e3;
+            background: rgba(0, 113, 227, 0.08);
         }
 
         .type-option .icon {
-            font-size: 20px;
+            font-size: 24px;
         }
 
         .type-option .label {
             font-size: 12px;
-            color: #666;
+            color: #1d1d1f;
             margin-top: 4px;
+            font-weight: 500;
         }
 
         .form-input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #e0e0e0;
+            padding: 14px 16px;
+            background: #f5f5f7;
+            border: none;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 17px;
             font-family: inherit;
+            color: #1d1d1f;
             -webkit-appearance: none;
+        }
+
+        .form-input::placeholder {
+            color: #86868b;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #6366f1;
+            background: #ebebf0;
         }
 
         textarea.form-input {
             min-height: 100px;
             resize: none;
+            line-height: 1.47;
         }
 
         .btn-submit {
             width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 500;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            background: #0071e3;
             color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 400;
+            cursor: pointer;
+            letter-spacing: -0.022em;
         }
 
         .btn-submit:disabled {
-            opacity: 0.6;
+            background: #999;
         }
 
         .success-view {
             text-align: center;
-            padding: 30px 0;
+            padding: 40px 20px;
             display: none;
         }
 
@@ -408,51 +448,62 @@
         }
 
         .success-view .icon {
-            font-size: 48px;
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            background: #34c759;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-view .icon svg {
+            width: 28px;
+            height: 28px;
+            color: #fff;
         }
 
         .success-view h4 {
-            margin: 12px 0 8px;
-            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 6px;
         }
 
         .success-view p {
-            color: #666;
-            font-size: 14px;
+            font-size: 15px;
+            color: #86868b;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>AI周报润色工具</h1>
-        <p>让您的周报更专业、更有价值</p>
-        <a href="javascript:openFeedback()" class="feedback-link">反馈</a>
-    </div>
+    <nav class="nav">
+        <div class="nav-content">
+            <span class="nav-title">周报润色</span>
+            <a href="javascript:openFeedback()" class="nav-link">反馈</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>周报润色</h1>
+        <p>让 AI 帮你写得更专业</p>
+    </section>
 
     <div class="container">
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('input')">输入周报</div>
-            <div class="tab" onclick="switchTab('output')">润色结果</div>
+        <div class="segmented-control">
+            <div class="segment active" onclick="switchTab('input')">输入</div>
+            <div class="segment" onclick="switchTab('output')">结果</div>
         </div>
 
         <div class="panel active" id="inputPanel">
             <div class="card">
                 <div class="card-header">
                     <h2>原始周报</h2>
-                    <button class="btn-small" onclick="clearInput()">清空</button>
+                    <button class="btn-text" onclick="clearInput()">清空</button>
                 </div>
                 <div class="card-body">
-                    <textarea id="input" placeholder="在此输入您的周报内容...
-
-例如：
-本周完成：
-1. 做了用户调研
-2. 写了需求文档
-3. 开了几个会
-
-下周计划：
-1. 继续推进项目
-2. 跟进开发进度"></textarea>
+                    <textarea id="input" placeholder="在这里输入你的周报内容..."></textarea>
                 </div>
             </div>
         </div>
@@ -461,19 +512,17 @@
             <div class="card">
                 <div class="card-header">
                     <h2>润色结果</h2>
-                    <button class="btn-small" id="copyBtn" onclick="copyResult()">复制</button>
+                    <button class="btn-text" onclick="copyResult()">复制</button>
                 </div>
                 <div class="card-body">
-                    <div class="output-area empty" id="output">润色结果将显示在这里</div>
+                    <div class="output-area empty" id="output">润色后的内容将在这里显示</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="bottom-bar">
-        <button class="btn-primary" id="polishBtn" onclick="polish()">
-            AI 润色
-        </button>
+        <button class="btn-primary" id="polishBtn" onclick="polish()">开始润色</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -483,7 +532,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>意见反馈</h3>
-                <button class="modal-close" onclick="closeFeedback()">&times;</button>
+                <button class="modal-close" onclick="closeFeedback()">完成</button>
             </div>
             <div class="modal-body">
                 <form id="feedbackForm">
@@ -519,8 +568,12 @@
                     <button type="submit" class="btn-submit" id="feedbackSubmitBtn">提交反馈</button>
                 </form>
                 <div class="success-view" id="feedbackSuccess">
-                    <div class="icon">🎉</div>
-                    <h4>提交成功！</h4>
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <h4>提交成功</h4>
                     <p>感谢您的反馈</p>
                 </div>
             </div>
@@ -531,11 +584,10 @@
         const inputEl = document.getElementById('input');
         const outputEl = document.getElementById('output');
         const polishBtn = document.getElementById('polishBtn');
-        const copyBtn = document.getElementById('copyBtn');
 
         function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach((t, i) => {
-                t.classList.toggle('active', (tab === 'input' && i === 0) || (tab === 'output' && i === 1));
+            document.querySelectorAll('.segment').forEach((s, i) => {
+                s.classList.toggle('active', (tab === 'input' && i === 0) || (tab === 'output' && i === 1));
             });
             document.getElementById('inputPanel').classList.toggle('active', tab === 'input');
             document.getElementById('outputPanel').classList.toggle('active', tab === 'output');
@@ -552,16 +604,14 @@
             }
 
             polishBtn.disabled = true;
-            polishBtn.innerHTML = '<span class="loading"><span class="spinner"></span>润色中...</span>';
-            outputEl.textContent = '正在润色，请稍候...';
+            polishBtn.innerHTML = '<span class="loading"><span class="spinner"></span>润色中</span>';
+            outputEl.textContent = '正在润色...';
             outputEl.classList.add('empty');
 
             try {
                 const response = await fetch('/api/polish', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content }),
                 });
 
@@ -581,13 +631,12 @@
                 showToast(error.message, 'error');
             } finally {
                 polishBtn.disabled = false;
-                polishBtn.innerHTML = 'AI 润色';
+                polishBtn.innerHTML = '开始润色';
             }
         }
 
         async function copyResult() {
             const content = outputEl.textContent;
-
             if (outputEl.classList.contains('empty')) {
                 showToast('没有可复制的内容', 'error');
                 return;
@@ -595,7 +644,7 @@
 
             try {
                 await navigator.clipboard.writeText(content);
-                showToast('已复制到剪贴板');
+                showToast('已复制');
             } catch (err) {
                 const textarea = document.createElement('textarea');
                 textarea.value = content;
@@ -605,7 +654,7 @@
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-                showToast('已复制到剪贴板');
+                showToast('已复制');
             }
         }
 
@@ -619,10 +668,7 @@
             toast.textContent = message;
             toast.className = 'toast' + (type === 'error' ? ' error' : '');
             toast.classList.add('show');
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
         // 反馈功能
