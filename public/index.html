@@ -12,97 +12,155 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-            background: #f5f5f7;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             min-height: 100vh;
-            color: #1d1d1f;
+            color: #fff;
             -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px 80px;
+            padding: 30px 24px;
         }
 
-        /* 标题区 */
+        /* 顶部标题 */
         .header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
         .header h1 {
             font-size: 36px;
             font-weight: 700;
-            color: #1d1d1f;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 8px;
-            letter-spacing: -0.5px;
         }
 
         .header p {
-            font-size: 17px;
-            color: #86868b;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
         }
 
-        /* 卡片通用样式 */
+        /* 身份选择 */
+        .role-section {
+            margin-bottom: 24px;
+        }
+
+        .role-cards {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .role-card {
+            flex: 1;
+            max-width: 200px;
+            padding: 20px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .role-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .role-card.selected {
+            transform: scale(1.02);
+            border: 2px solid transparent;
+            background: linear-gradient(#1a1a2e, #1a1a2e) padding-box,
+                        linear-gradient(135deg, #667eea, #764ba2) border-box;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .role-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* 主体两栏 */
+        .main-content {
+            display: flex;
+            gap: 24px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 毛玻璃卡片 */
         .card {
-            background: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            padding: 20px;
         }
 
-        /* 范本设置区 - 可折叠 */
+        /* 范本区 - 折叠 */
         .template-section {
-            background: #f9f9f9;
-            border: 2px dashed #d2d2d7;
-            border-radius: 16px;
-            margin-bottom: 20px;
+            padding: 0;
             overflow: hidden;
         }
 
         .template-header {
-            padding: 16px 24px;
-            cursor: pointer;
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            user-select: none;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
         .template-header:hover {
-            background: #f0f0f0;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .template-title {
-            font-size: 15px;
-            font-weight: 500;
-            color: #1d1d1f;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .template-status {
-            font-size: 13px;
+            font-size: 12px;
             color: #34c759;
+            margin-left: 8px;
             display: none;
         }
 
         .template-status.show {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            display: inline;
         }
 
         .template-toggle {
             font-size: 13px;
-            color: #0066cc;
+            color: #667eea;
         }
 
         .template-body {
-            padding: 0 24px 24px;
+            padding: 0 20px 20px;
             display: none;
         }
 
@@ -112,214 +170,198 @@
 
         .template-textarea {
             width: 100%;
-            min-height: 150px;
-            padding: 14px 16px;
-            border: 1px solid #d2d2d7;
+            min-height: 100px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            font-size: 15px;
+            color: #fff;
+            font-size: 14px;
             font-family: inherit;
-            line-height: 1.5;
             resize: vertical;
-            background: #fff;
-            color: #1d1d1f;
+            line-height: 1.5;
+        }
+
+        .template-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .template-textarea:focus {
             outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
         .template-actions {
             margin-top: 12px;
             display: flex;
-            gap: 12px;
-            align-items: center;
+            gap: 10px;
         }
 
-        .btn-save-template {
-            padding: 10px 20px;
-            background: #0066cc;
+        .btn-save {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-save-template:hover {
-            background: #0055aa;
-        }
-
-        .btn-clear-template {
-            padding: 10px 20px;
-            background: transparent;
-            color: #86868b;
-            border: 1px solid #d2d2d7;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-clear-template:hover {
-            border-color: #ff3b30;
-            color: #ff3b30;
-        }
-
-        /* 风格选择区 */
-        .style-section {
-            margin-bottom: 20px;
-        }
-
-        .section-label {
-            font-size: 15px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 12px;
-        }
-
-        .style-options {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .style-option {
-            flex: 1;
-            min-width: 200px;
-            padding: 16px;
-            border: 2px solid #e5e5e5;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fff;
-        }
-
-        .style-option:hover {
-            border-color: #c5c5c5;
-        }
-
-        .style-option.selected {
-            border-color: #0066cc;
-            background: rgba(0, 102, 204, 0.04);
-        }
-
-        .style-option input {
-            display: none;
-        }
-
-        .style-option-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .style-option-title::before {
-            content: '';
-            width: 16px;
-            height: 16px;
-            border: 2px solid #d2d2d7;
-            border-radius: 50%;
-            display: inline-block;
-            transition: all 0.2s;
-        }
-
-        .style-option.selected .style-option-title::before {
-            border-color: #0066cc;
-            background: #0066cc;
-            box-shadow: inset 0 0 0 3px #fff;
-        }
-
-        .style-option-desc {
             font-size: 13px;
-            color: #86868b;
-            margin-left: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-clear {
+            padding: 8px 16px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear:hover {
+            border-color: #ff453a;
+            color: #ff453a;
         }
 
         /* 使用范本开关 */
-        .use-template-section {
-            margin-bottom: 20px;
-            padding: 16px 20px;
-            background: #fff;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .use-template-section.disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .checkbox-wrapper {
+        .use-template {
+            padding: 14px 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .use-template.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .use-template input {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .use-template label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
             cursor: pointer;
-            user-select: none;
         }
 
-        .checkbox-wrapper input {
-            width: 20px;
-            height: 20px;
-            accent-color: #0066cc;
-            cursor: pointer;
-        }
-
-        .checkbox-label {
-            font-size: 15px;
-            color: #1d1d1f;
-        }
-
-        .checkbox-hint {
-            font-size: 13px;
-            color: #86868b;
+        .use-template .hint {
             margin-left: auto;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         /* 输入区 */
-        .input-section .section-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .input-section {
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 12px;
         }
 
         .input-textarea {
             width: 100%;
-            min-height: 200px;
-            padding: 16px;
-            border: 1px solid #d2d2d7;
+            min-height: 180px;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            font-size: 16px;
+            color: #fff;
+            font-size: 15px;
             font-family: inherit;
-            line-height: 1.6;
             resize: vertical;
-            color: #1d1d1f;
-            background: #fff;
+            line-height: 1.6;
+        }
+
+        .input-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.35);
         }
 
         .input-textarea:focus {
             outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
-        .input-textarea::placeholder {
-            color: #999;
+        /* 输出区 */
+        .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 操作按钮 */
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .btn-copy {
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .output-content {
+            flex: 1;
+            min-height: 250px;
+            max-height: 350px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .output-content.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .output-content.result {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 润色按钮 */
         .action-section {
             text-align: center;
-            margin: 32px 0;
+            margin-top: 28px;
         }
 
         .btn-polish {
@@ -327,27 +369,32 @@
             align-items: center;
             justify-content: center;
             min-width: 200px;
-            padding: 16px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px 48px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: gradientFlow 3s ease infinite;
             color: #fff;
             border: none;
-            border-radius: 30px;
+            border-radius: 14px;
             font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
         }
 
         .btn-polish:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-polish:active:not(:disabled) {
+            transform: scale(0.98);
         }
 
         .btn-polish:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            animation: none;
         }
 
         .btn-polish .spinner {
@@ -360,65 +407,29 @@
             margin-right: 10px;
         }
 
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* 输出区 */
-        .output-section {
-            display: none;
-        }
-
-        .output-section.show {
-            display: block;
-        }
-
-        .output-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .output-content {
-            min-height: 200px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 12px;
-            font-size: 15px;
-            line-height: 1.8;
-            white-space: pre-wrap;
-            color: #1d1d1f;
-        }
-
-        .btn-copy {
-            padding: 8px 16px;
-            background: #fff;
-            color: #0066cc;
-            border: 1px solid #0066cc;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-copy:hover {
-            background: #0066cc;
-            color: #fff;
-        }
-
-        /* Toast 提示 */
+        /* Toast */
         .toast {
             position: fixed;
-            top: 20px;
+            top: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            background: #1d1d1f;
+            background: rgba(30, 30, 46, 0.95);
             color: #fff;
             padding: 14px 28px;
-            border-radius: 30px;
-            font-size: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 1000;
@@ -430,48 +441,41 @@
         }
 
         .toast.error {
-            background: #ff3b30;
+            border-color: #ff453a;
         }
 
         .toast.success {
-            background: #34c759;
+            border-color: #34c759;
         }
 
-        /* 右侧浮动工具栏 */
-        .floating-toolbar {
+        /* 浮动反馈按钮 */
+        .floating-btn {
             position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 900;
-        }
-
-        .toolbar-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #fff;
+            right: 24px;
+            bottom: 24px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 900;
         }
 
-        .toolbar-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
         }
 
-        .toolbar-btn svg {
-            width: 22px;
-            height: 22px;
-            color: #1d1d1f;
+        .floating-btn svg {
+            width: 24px;
+            height: 24px;
+            color: #fff;
         }
 
         /* 反馈弹窗 */
@@ -481,7 +485,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -497,12 +502,11 @@
         }
 
         .modal {
-            background: #fff;
-            border-radius: 18px;
+            background: #1e1e2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
             width: 90%;
-            max-width: 480px;
-            max-height: 90vh;
-            overflow-y: auto;
+            max-width: 450px;
             transform: scale(0.95);
             transition: transform 0.3s ease;
         }
@@ -512,38 +516,33 @@
         }
 
         .modal-header {
-            padding: 24px 24px 0;
+            padding: 20px 24px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-header h3 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 600;
-            color: #1d1d1f;
         }
 
         .modal-close {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #e8e8ed;
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.2s;
         }
 
         .modal-close:hover {
-            background: #d2d2d7;
-        }
-
-        .modal-close svg {
-            width: 14px;
-            height: 14px;
-            color: #86868b;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .modal-body {
@@ -551,20 +550,15 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #1d1d1f;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 8px;
-        }
-
-        .form-group .optional {
-            color: #86868b;
-            font-weight: 400;
         }
 
         .type-selector {
@@ -574,72 +568,71 @@
 
         .type-option {
             flex: 1;
-            padding: 14px 10px;
+            padding: 12px 8px;
             text-align: center;
-            border: 1px solid #d2d2d7;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
-            background: #fff;
         }
 
         .type-option:hover {
-            border-color: #86868b;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .type-option.selected {
-            border-color: #0066cc;
-            background: rgba(0, 102, 204, 0.04);
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
         }
 
         .type-option .icon {
-            font-size: 22px;
+            font-size: 20px;
             margin-bottom: 4px;
         }
 
         .type-option .label {
-            font-size: 13px;
-            color: #1d1d1f;
-            font-weight: 500;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .form-input {
             width: 100%;
             padding: 12px 14px;
-            border: 1px solid #d2d2d7;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            font-size: 15px;
+            color: #fff;
+            font-size: 14px;
             font-family: inherit;
-            color: #1d1d1f;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            border-color: #667eea;
         }
 
         textarea.form-input {
-            min-height: 100px;
+            min-height: 80px;
             resize: vertical;
-            line-height: 1.5;
         }
 
         .btn-submit {
             width: 100%;
             padding: 14px;
-            background: #0066cc;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: #fff;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
         .btn-submit:hover:not(:disabled) {
-            background: #0055aa;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn-submit:disabled {
@@ -649,7 +642,7 @@
 
         .success-view {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px;
             display: none;
         }
 
@@ -658,8 +651,8 @@
         }
 
         .success-view .icon {
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             margin: 0 auto 16px;
             background: #34c759;
             border-radius: 50%;
@@ -669,166 +662,159 @@
         }
 
         .success-view .icon svg {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             color: #fff;
         }
 
         .success-view h4 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1d1d1f;
+            font-size: 18px;
             margin-bottom: 6px;
         }
 
         .success-view p {
-            font-size: 15px;
-            color: #86868b;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
         }
 
         /* 响应式 */
         @media (max-width: 768px) {
             .container {
-                padding: 24px 16px 60px;
+                padding: 20px 16px;
             }
 
             .header h1 {
                 font-size: 28px;
             }
 
-            .style-options {
-                flex-direction: column;
-            }
-
-            .style-option {
-                min-width: 100%;
-            }
-
-            .floating-toolbar {
-                right: 12px;
-            }
-
-            .toolbar-btn {
-                width: 44px;
-                height: 44px;
-            }
-
-            .use-template-section {
+            .role-cards {
                 flex-wrap: wrap;
             }
 
-            .checkbox-hint {
-                width: 100%;
-                margin-left: 30px;
-                margin-top: 4px;
+            .role-card {
+                max-width: none;
+                flex: 1 1 calc(33% - 12px);
+                padding: 14px 10px;
+            }
+
+            .role-icon {
+                font-size: 24px;
+            }
+
+            .role-name {
+                font-size: 13px;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .output-content {
+                min-height: 200px;
+            }
+
+            .floating-btn {
+                right: 16px;
+                bottom: 16px;
+                width: 46px;
+                height: 46px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 标题区 -->
+        <!-- 顶部标题 -->
         <header class="header">
             <h1>周报优化神器</h1>
-            <p>随便写，AI帮你变成P9视角的专业周报</p>
+            <p>你只管放飞写，随意堆，剩下交给我</p>
         </header>
 
-        <!-- 范本设置区 -->
-        <div class="template-section" id="templateSection">
-            <div class="template-header" onclick="toggleTemplate()">
-                <div class="template-title">
-                    <span>📋 我的周报范本（可选）</span>
-                    <span class="template-status" id="templateStatus">✓ 已保存范本</span>
+        <!-- 身份选择 -->
+        <div class="role-section">
+            <div class="role-cards">
+                <div class="role-card" data-role="dev" onclick="selectRole(this)">
+                    <div class="role-icon">💻</div>
+                    <div class="role-name">开发工程师</div>
                 </div>
-                <span class="template-toggle" id="templateToggle">展开</span>
-            </div>
-            <div class="template-body" id="templateBody">
-                <textarea
-                    class="template-textarea"
-                    id="templateInput"
-                    placeholder="粘贴一份你满意的周报作为参考范例...
-
-AI 会学习这份范本的：
-- 结构和分段方式
-- 语气和措辞风格
-- 专业程度和表达习惯"></textarea>
-                <div class="template-actions">
-                    <button class="btn-save-template" onclick="saveTemplate()">保存范本</button>
-                    <button class="btn-clear-template" onclick="clearTemplate()">清除</button>
+                <div class="role-card" data-role="ops" onclick="selectRole(this)">
+                    <div class="role-icon">📊</div>
+                    <div class="role-name">运营</div>
+                </div>
+                <div class="role-card selected" data-role="pm" onclick="selectRole(this)">
+                    <div class="role-icon">🎯</div>
+                    <div class="role-name">产品经理</div>
                 </div>
             </div>
         </div>
 
-        <!-- 改写风格选择 -->
-        <div class="card style-section">
-            <div class="section-label">改写风格</div>
-            <div class="style-options">
-                <label class="style-option selected" data-style="stable">
-                    <input type="radio" name="style" value="stable" checked>
-                    <div class="style-option-title">稳健务实</div>
-                    <div class="style-option-desc">适合常规周报，客观陈述进展</div>
-                </label>
-                <label class="style-option" data-style="achievement">
-                    <input type="radio" name="style" value="achievement">
-                    <div class="style-option-title">突出成果</div>
-                    <div class="style-option-desc">适合晋升期、绩效季，强调价值</div>
-                </label>
-                <label class="style-option" data-style="risk">
-                    <input type="radio" name="style" value="risk">
-                    <div class="style-option-title">风险预警</div>
-                    <div class="style-option-desc">适合项目有问题时，争取支持</div>
-                </label>
+        <!-- 主体两栏 -->
+        <div class="main-content">
+            <!-- 左栏 -->
+            <div class="left-panel">
+                <!-- 范本区 -->
+                <div class="card template-section">
+                    <div class="template-header" onclick="toggleTemplate()">
+                        <span class="template-title">
+                            📋 我的周报范本（可选）
+                            <span class="template-status" id="templateStatus">✓ 已保存</span>
+                        </span>
+                        <span class="template-toggle" id="templateToggle">展开</span>
+                    </div>
+                    <div class="template-body" id="templateBody">
+                        <textarea class="template-textarea" id="templateInput" placeholder="粘贴一份你满意的周报作为范本..."></textarea>
+                        <div class="template-actions">
+                            <button class="btn-save" onclick="saveTemplate()">保存范本</button>
+                            <button class="btn-clear" onclick="clearTemplate()">清除</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 使用范本开关 -->
+                <div class="card use-template disabled" id="useTemplateSection">
+                    <input type="checkbox" id="useTemplateCheckbox" disabled>
+                    <label for="useTemplateCheckbox">使用我的范本风格</label>
+                    <span class="hint" id="templateHint">请先保存范本</span>
+                </div>
+
+                <!-- 输入区 -->
+                <div class="card input-section">
+                    <div class="section-title">✏️ 随便写，流水账也行</div>
+                    <textarea class="input-textarea" id="contentInput" placeholder="把本周做的事随便写，比如：
+
+这周主要跟A项目，需求评审过了
+和研发对了排期，下周能提测
+参加了两个跨部门会议
+老板让调研竞品，写了个分析"></textarea>
+                </div>
             </div>
-        </div>
 
-        <!-- 使用范本开关 -->
-        <div class="use-template-section disabled" id="useTemplateSection">
-            <label class="checkbox-wrapper">
-                <input type="checkbox" id="useTemplateCheckbox" disabled>
-                <span class="checkbox-label">使用我的范本风格</span>
-            </label>
-            <span class="checkbox-hint" id="templateHint">请先保存范本</span>
-        </div>
-
-        <!-- 输入区 -->
-        <div class="card input-section">
-            <div class="section-label">✏️ 随便写，不用管格式</div>
-            <textarea
-                class="input-textarea"
-                id="contentInput"
-                placeholder="把本周做的事情随便写，比如：
-
-这周主要在跟A项目，需求评审过了
-和研发对了下排期，大概下周能提测
-还参加了两个跨部门会议，讨论了下Q2规划
-老板让我调研下竞品，写了个初步分析"></textarea>
+            <!-- 右栏 -->
+            <div class="right-panel">
+                <div class="card output-section">
+                    <div class="output-header">
+                        <div class="section-title">润色结果</div>
+                        <button class="btn-copy" onclick="copyResult()">复制</button>
+                    </div>
+                    <div class="output-content empty" id="outputContent">润色后的周报将显示在这里</div>
+                </div>
+            </div>
         </div>
 
         <!-- 润色按钮 -->
         <div class="action-section">
             <button class="btn-polish" id="polishBtn" onclick="polish()">开始润色</button>
         </div>
-
-        <!-- 输出区 -->
-        <div class="card output-section" id="outputSection">
-            <div class="output-header">
-                <div class="section-label">润色结果</div>
-                <button class="btn-copy" onclick="copyResult()">复制</button>
-            </div>
-            <div class="output-content" id="outputContent"></div>
-        </div>
     </div>
 
-    <!-- 右侧浮动工具栏 -->
-    <div class="floating-toolbar">
-        <button class="toolbar-btn" onclick="openFeedback()" title="意见反馈">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
-            </svg>
-        </button>
-    </div>
+    <!-- 浮动反馈按钮 -->
+    <button class="floating-btn" onclick="openFeedback()" title="意见反馈">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
+        </svg>
+    </button>
 
-    <!-- Toast 提示 -->
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <!-- 反馈弹窗 -->
@@ -836,11 +822,7 @@ AI 会学习这份范本的：
         <div class="modal">
             <div class="modal-header">
                 <h3>意见反馈</h3>
-                <button class="modal-close" onclick="closeFeedback()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
+                <button class="modal-close" onclick="closeFeedback()">✕</button>
             </div>
             <div class="modal-body">
                 <form id="feedbackForm">
@@ -863,14 +845,14 @@ AI 会学习这份范本的：
                     </div>
                     <div class="form-group">
                         <label>标题</label>
-                        <input type="text" class="form-input" id="feedbackTitle" placeholder="简要描述您的问题或建议" required>
+                        <input type="text" class="form-input" id="feedbackTitle" placeholder="简要描述" required>
                     </div>
                     <div class="form-group">
                         <label>详细描述</label>
-                        <textarea class="form-input" id="feedbackDesc" placeholder="请详细描述，以便我们更好地处理" required></textarea>
+                        <textarea class="form-input" id="feedbackDesc" placeholder="请详细描述..." required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>联系方式 <span class="optional">(选填)</span></label>
+                        <label>联系方式（选填）</label>
                         <input type="text" class="form-input" id="feedbackContact" placeholder="邮箱或手机号">
                     </div>
                     <button type="submit" class="btn-submit" id="feedbackSubmitBtn">提交反馈</button>
@@ -889,10 +871,19 @@ AI 会学习这份范本的：
     </div>
 
     <script>
-        // ========== 范本功能 ==========
-        const TEMPLATE_KEY = 'weekly_report_template';
+        // ========== 状态 ==========
+        let selectedRole = 'pm';
         let templateExpanded = false;
+        const TEMPLATE_KEY = 'weekly_report_template';
 
+        // ========== 身份选择 ==========
+        function selectRole(el) {
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedRole = el.dataset.role;
+        }
+
+        // ========== 范本功能 ==========
         function initTemplate() {
             const saved = localStorage.getItem(TEMPLATE_KEY);
             if (saved) {
@@ -934,7 +925,7 @@ AI 会学习这份范本的：
             const hint = document.getElementById('templateHint');
             section.classList.remove('disabled');
             checkbox.disabled = false;
-            hint.textContent = '勾选后将参考你的范本风格';
+            hint.textContent = '勾选后参考你的范本风格';
         }
 
         function disableUseTemplate() {
@@ -947,26 +938,11 @@ AI 会学习这份范本的：
             hint.textContent = '请先保存范本';
         }
 
-        // ========== 风格选择 ==========
-        document.querySelectorAll('.style-option').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
-                option.querySelector('input').checked = true;
-            });
-        });
-
-        function getSelectedStyle() {
-            const checked = document.querySelector('input[name="style"]:checked');
-            return checked ? checked.value : 'stable';
-        }
-
         // ========== 润色功能 ==========
         async function polish() {
             const content = document.getElementById('contentInput').value.trim();
             if (!content) {
                 showToast('请输入周报内容', 'error');
-                document.getElementById('contentInput').focus();
                 return;
             }
 
@@ -974,7 +950,6 @@ AI 会学习这份范本的：
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>润色中...';
 
-            const style = getSelectedStyle();
             const useTemplate = document.getElementById('useTemplateCheckbox').checked;
             const template = useTemplate ? localStorage.getItem(TEMPLATE_KEY) : null;
 
@@ -982,18 +957,16 @@ AI 会学习这份范本的：
                 const response = await fetch('/api/polish', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content, template, useTemplate, style })
+                    body: JSON.stringify({ content, role: selectedRole, template, useTemplate })
                 });
 
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.error || '润色失败');
 
-                if (!response.ok) {
-                    throw new Error(data.error || '润色失败');
-                }
-
-                document.getElementById('outputContent').textContent = data.result;
-                document.getElementById('outputSection').classList.add('show');
-                document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const output = document.getElementById('outputContent');
+                output.textContent = data.result;
+                output.classList.remove('empty');
+                output.classList.add('result');
                 showToast('润色完成', 'success');
             } catch (error) {
                 showToast(error.message, 'error');
@@ -1004,25 +977,24 @@ AI 会学习这份范本的：
         }
 
         async function copyResult() {
-            const content = document.getElementById('outputContent').textContent;
-            if (!content) return;
+            const output = document.getElementById('outputContent');
+            if (output.classList.contains('empty')) return;
 
             try {
-                await navigator.clipboard.writeText(content);
-                showToast('已复制到剪贴板', 'success');
-            } catch (err) {
-                // fallback
+                await navigator.clipboard.writeText(output.textContent);
+                showToast('已复制', 'success');
+            } catch {
                 const textarea = document.createElement('textarea');
-                textarea.value = content;
+                textarea.value = output.textContent;
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
-                showToast('已复制到剪贴板', 'success');
+                showToast('已复制', 'success');
             }
         }
 
-        // ========== Toast 提示 ==========
+        // ========== Toast ==========
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1064,7 +1036,6 @@ AI 会学习这份范本的：
 
         document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const title = document.getElementById('feedbackTitle').value.trim();
             const description = document.getElementById('feedbackDesc').value.trim();
             const contact = document.getElementById('feedbackContact').value.trim();
@@ -1074,9 +1045,9 @@ AI 会学习这份范本的：
                 return;
             }
 
-            const submitBtn = document.getElementById('feedbackSubmitBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = '提交中...';
+            const btn = document.getElementById('feedbackSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = '提交中...';
 
             try {
                 const response = await fetch('/api/feedback', {
@@ -1086,21 +1057,16 @@ AI 会学习这份范本的：
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || '提交失败');
-
-                const ids = JSON.parse(localStorage.getItem('feedback_ids') || '[]');
-                ids.unshift(data.id);
-                localStorage.setItem('feedback_ids', JSON.stringify(ids.slice(0, 50)));
+                if (!response.ok) throw new Error(data.error);
 
                 document.getElementById('feedbackForm').style.display = 'none';
                 document.getElementById('feedbackSuccess').classList.add('show');
-
                 setTimeout(closeFeedback, 2000);
             } catch (error) {
                 showToast(error.message, 'error');
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '提交反馈';
+                btn.disabled = false;
+                btn.textContent = '提交反馈';
             }
         });
 
