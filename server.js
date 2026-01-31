@@ -207,6 +207,99 @@ function callDeepSeekAPI(prompt) {
   });
 }
 
+// ReAct Agent Prompt 构建
+function buildChatPrompt(currentReport, message, history = []) {
+  const historyText = history.slice(-10).map(h =>
+    `用户: ${h.user}\n助手: ${h.assistant}`
+  ).join('\n\n');
+
+  return `你是一个周报修改助手，采用ReAct模式工作。
+
+【当前周报内容】
+"""
+${currentReport}
+"""
+
+${historyText ? `【对话历史】\n${historyText}\n\n` : ''}【用户指令】
+${message}
+
+【你的工作流程】
+1. **Thought**: 分析用户想要什么修改，识别修改类型：
+   - 内容修改（增/删/改具体内容）
+   - 风格调整（语气、措辞、专业度）
+   - 结构调整（顺序、分组、格式）
+   - 细节优化（数据、用词、标点）
+
+2. **Action**: 执行修改，输出完整的新版周报
+
+3. **Observation**: 简要说明做了什么改动（一句话）
+
+【输出格式要求】
+必须严格按以下XML格式输出，不要有其他内容：
+
+<thought>
+[你的分析，1-2句话]
+</thought>
+
+<action>
+[完整的修改后周报，保持原有的markdown格式]
+</action>
+
+<observation>
+[改动说明，1句话，以"已"开头]
+</observation>`;
+}
+
+// 解析 ReAct 响应
+function parseReActResponse(response) {
+  const thoughtMatch = response.match(/<thought>([\s\S]*?)<\/thought>/);
+  const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/);
+  const observationMatch = response.match(/<observation>([\s\S]*?)<\/observation>/);
+
+  return {
+    thought: thoughtMatch ? thoughtMatch[1].trim() : '正在分析修改需求...',
+    newReport: actionMatch ? actionMatch[1].trim() : response,
+    observation: observationMatch ? observationMatch[1].trim() : '已完成修改'
+  };
+}
+
+// AI对话修改接口
+app.post('/api/chat', async (req, res) => {
+  const { currentReport, message, history = [] } = req.body;
+
+  if (!currentReport || !currentReport.trim()) {
+    return res.status(400).json({ error: '当前周报内容不能为空' });
+  }
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: '请输入修改指令' });
+  }
+
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return res.status(500).json({ error: 'API Key 未配置' });
+  }
+
+  try {
+    const prompt = buildChatPrompt(currentReport, message, history);
+    const data = await callDeepSeekAPI(prompt);
+    const rawResponse = data.choices[0].message.content;
+    const parsed = parseReActResponse(rawResponse);
+
+    res.json(parsed);
+  } catch (error) {
+    console.error('Chat API 调用失败:', error.status, error.data || error.message);
+
+    if (error.status === 401) {
+      return res.status(401).json({ error: 'API Key 无效' });
+    }
+    if (error.status === 429) {
+      return res.status(429).json({ error: '请求过于频繁，请稍后重试' });
+    }
+
+    res.status(500).json({ error: `修改失败: ${error.message || '请稍后重试'}` });
+  }
+});
+
 // 润色接口
 app.post('/api/polish', async (req, res) => {
   const { content, role = 'pm', template, useTemplate } = req.body;
