@@ -234,12 +234,199 @@
         .panel.active {
             display: block;
         }
+
+        /* 反馈入口 */
+        .feedback-link {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.9);
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .header {
+            position: relative;
+        }
+
+        /* 反馈弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-end;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .modal-overlay.show .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fff;
+        }
+
+        .modal-header h3 {
+            font-size: 17px;
+            color: #1a1a2e;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group .optional {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .type-option {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .type-option.selected {
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+
+        .type-option .icon {
+            font-size: 20px;
+        }
+
+        .type-option .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            -webkit-appearance: none;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        textarea.form-input {
+            min-height: 100px;
+            resize: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+        }
+
+        .success-view {
+            text-align: center;
+            padding: 30px 0;
+            display: none;
+        }
+
+        .success-view.show {
+            display: block;
+        }
+
+        .success-view .icon {
+            font-size: 48px;
+        }
+
+        .success-view h4 {
+            margin: 12px 0 8px;
+            color: #333;
+        }
+
+        .success-view p {
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>AI周报润色工具</h1>
         <p>让您的周报更专业、更有价值</p>
+        <a href="javascript:openFeedback()" class="feedback-link">反馈</a>
     </div>
 
     <div class="container">
@@ -290,6 +477,55 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- 反馈弹窗 -->
+    <div class="modal-overlay" id="feedbackModal" onclick="closeFeedbackOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>意见反馈</h3>
+                <button class="modal-close" onclick="closeFeedback()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="form-group">
+                        <label>反馈类型</label>
+                        <div class="type-selector">
+                            <div class="type-option selected" data-type="bug" onclick="selectFeedbackType(this)">
+                                <div class="icon">🐛</div>
+                                <div class="label">Bug</div>
+                            </div>
+                            <div class="type-option" data-type="suggestion" onclick="selectFeedbackType(this)">
+                                <div class="icon">💡</div>
+                                <div class="label">建议</div>
+                            </div>
+                            <div class="type-option" data-type="inquiry" onclick="selectFeedbackType(this)">
+                                <div class="icon">❓</div>
+                                <div class="label">咨询</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" class="form-input" id="feedbackTitle" placeholder="简要描述您的问题" required>
+                    </div>
+                    <div class="form-group">
+                        <label>详细描述</label>
+                        <textarea class="form-input" id="feedbackDesc" placeholder="请详细描述" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>联系方式 <span class="optional">(选填)</span></label>
+                        <input type="text" class="form-input" id="feedbackContact" placeholder="邮箱或手机号">
+                    </div>
+                    <button type="submit" class="btn-submit" id="feedbackSubmitBtn">提交反馈</button>
+                </form>
+                <div class="success-view" id="feedbackSuccess">
+                    <div class="icon">🎉</div>
+                    <h4>提交成功！</h4>
+                    <p>感谢您的反馈</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const inputEl = document.getElementById('input');
@@ -388,6 +624,74 @@
                 toast.classList.remove('show');
             }, 2000);
         }
+
+        // 反馈功能
+        let selectedFeedbackType = 'bug';
+
+        function openFeedback() {
+            document.getElementById('feedbackModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedbackModal').classList.remove('show');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                document.getElementById('feedbackForm').reset();
+                document.getElementById('feedbackForm').style.display = 'block';
+                document.getElementById('feedbackSuccess').classList.remove('show');
+                document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+                document.querySelector('.type-option[data-type="bug"]').classList.add('selected');
+                selectedFeedbackType = 'bug';
+            }, 300);
+        }
+
+        function closeFeedbackOnOverlay(e) {
+            if (e.target === e.currentTarget) closeFeedback();
+        }
+
+        function selectFeedbackType(el) {
+            document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedFeedbackType = el.dataset.type;
+        }
+
+        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('feedbackTitle').value.trim();
+            const description = document.getElementById('feedbackDesc').value.trim();
+            const contact = document.getElementById('feedbackContact').value.trim();
+
+            if (!title || !description) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('feedbackSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: selectedFeedbackType, title, description, contact })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || '提交失败');
+
+                document.getElementById('feedbackForm').style.display = 'none';
+                document.getElementById('feedbackSuccess').classList.add('show');
+                setTimeout(closeFeedback, 2000);
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '提交反馈';
+            }
+        });
     </script>
 </body>
 </html>

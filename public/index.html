@@ -238,6 +238,214 @@
                 min-height: 250px;
             }
         }
+
+        /* 反馈按钮和弹窗样式 */
+        .feedback-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 900;
+        }
+
+        .feedback-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.show .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            color: #1a1a2e;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group .optional {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .type-option {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .type-option:hover {
+            border-color: #6366f1;
+        }
+
+        .type-option.selected {
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+
+        .type-option .icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .type-option .label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        textarea.form-input {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .success-view {
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+        }
+
+        .success-view.show {
+            display: block;
+        }
+
+        .success-view .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .success-view h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .success-view p {
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -285,6 +493,58 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- 反馈按钮 -->
+    <button class="feedback-btn" onclick="openFeedback()" title="意见反馈">💬</button>
+
+    <!-- 反馈弹窗 -->
+    <div class="modal-overlay" id="feedbackModal" onclick="closeFeedbackOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>意见反馈</h3>
+                <button class="modal-close" onclick="closeFeedback()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="form-group">
+                        <label>反馈类型</label>
+                        <div class="type-selector">
+                            <div class="type-option selected" data-type="bug" onclick="selectFeedbackType(this)">
+                                <div class="icon">🐛</div>
+                                <div class="label">Bug</div>
+                            </div>
+                            <div class="type-option" data-type="suggestion" onclick="selectFeedbackType(this)">
+                                <div class="icon">💡</div>
+                                <div class="label">建议</div>
+                            </div>
+                            <div class="type-option" data-type="inquiry" onclick="selectFeedbackType(this)">
+                                <div class="icon">❓</div>
+                                <div class="label">咨询</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" class="form-input" id="feedbackTitle" placeholder="简要描述您的问题或建议" required>
+                    </div>
+                    <div class="form-group">
+                        <label>详细描述</label>
+                        <textarea class="form-input" id="feedbackDesc" placeholder="请详细描述，以便我们更好地处理" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>联系方式 <span class="optional">(选填)</span></label>
+                        <input type="text" class="form-input" id="feedbackContact" placeholder="邮箱或手机号">
+                    </div>
+                    <button type="submit" class="btn-submit" id="feedbackSubmitBtn">提交反馈</button>
+                </form>
+                <div class="success-view" id="feedbackSuccess">
+                    <div class="icon">🎉</div>
+                    <h4>提交成功！</h4>
+                    <p>感谢您的反馈，我们会尽快处理</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const inputEl = document.getElementById('input');
@@ -377,6 +637,89 @@
         inputEl.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 polish();
+            }
+        });
+
+        // 反馈功能
+        let selectedFeedbackType = 'bug';
+
+        function openFeedback() {
+            document.getElementById('feedbackModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedbackModal').classList.remove('show');
+            document.body.style.overflow = '';
+            // 重置表单
+            setTimeout(() => {
+                document.getElementById('feedbackForm').reset();
+                document.getElementById('feedbackForm').style.display = 'block';
+                document.getElementById('feedbackSuccess').classList.remove('show');
+                document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+                document.querySelector('.type-option[data-type="bug"]').classList.add('selected');
+                selectedFeedbackType = 'bug';
+            }, 300);
+        }
+
+        function closeFeedbackOnOverlay(e) {
+            if (e.target === e.currentTarget) closeFeedback();
+        }
+
+        function selectFeedbackType(el) {
+            document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedFeedbackType = el.dataset.type;
+        }
+
+        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('feedbackTitle').value.trim();
+            const description = document.getElementById('feedbackDesc').value.trim();
+            const contact = document.getElementById('feedbackContact').value.trim();
+
+            if (!title || !description) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('feedbackSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: selectedFeedbackType,
+                        title,
+                        description,
+                        contact
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '提交失败');
+                }
+
+                // 存储ID到localStorage
+                const ids = JSON.parse(localStorage.getItem('feedback_ids') || '[]');
+                ids.unshift(data.id);
+                localStorage.setItem('feedback_ids', JSON.stringify(ids.slice(0, 50)));
+
+                document.getElementById('feedbackForm').style.display = 'none';
+                document.getElementById('feedbackSuccess').classList.add('show');
+
+                setTimeout(closeFeedback, 2000);
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '提交反馈';
             }
         });
     </script>

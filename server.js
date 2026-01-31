@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { randomUUID } from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -135,6 +137,114 @@ app.post('/api/polish', async (req, res) => {
 
     res.status(500).json({ error: `润色失败: ${error.message || '请稍后重试'}` });
   }
+});
+
+// ========== 反馈系统 API ==========
+const DATA_DIR = join(__dirname, 'data');
+const FEEDBACK_FILE = join(DATA_DIR, 'feedback.json');
+
+// 确保数据目录存在
+if (!existsSync(DATA_DIR)) {
+  mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// 读取反馈数据
+function readFeedback() {
+  if (!existsSync(FEEDBACK_FILE)) {
+    writeFileSync(FEEDBACK_FILE, '[]');
+    return [];
+  }
+  return JSON.parse(readFileSync(FEEDBACK_FILE, 'utf-8') || '[]');
+}
+
+// 写入反馈数据
+function writeFeedback(data) {
+  writeFileSync(FEEDBACK_FILE, JSON.stringify(data, null, 2));
+}
+
+// 提交反馈
+app.post('/api/feedback', (req, res) => {
+  const { type, title, description, contact } = req.body;
+
+  if (!type || !title || !description) {
+    return res.status(400).json({ error: '请填写完整信息' });
+  }
+
+  const feedback = {
+    id: randomUUID(),
+    type,
+    title,
+    description,
+    contact: contact || '',
+    status: 'pending',
+    note: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const data = readFeedback();
+  data.unshift(feedback);
+  writeFeedback(data);
+
+  res.json({ success: true, id: feedback.id });
+});
+
+// 获取反馈列表
+app.get('/api/feedback', (req, res) => {
+  const { type, status, ids } = req.query;
+  let data = readFeedback();
+
+  if (ids) {
+    const idList = ids.split(',');
+    data = data.filter(item => idList.includes(item.id));
+  }
+
+  if (type && type !== 'all') {
+    data = data.filter(item => item.type === type);
+  }
+
+  if (status && status !== 'all') {
+    data = data.filter(item => item.status === status);
+  }
+
+  res.json(data);
+});
+
+// 更新反馈
+app.put('/api/feedback/:id', (req, res) => {
+  const { status, note } = req.body;
+  const data = readFeedback();
+  const index = data.findIndex(item => item.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: '反馈不存在' });
+  }
+
+  if (status) data[index].status = status;
+  if (note !== undefined) data[index].note = note;
+  data[index].updatedAt = new Date().toISOString();
+
+  writeFeedback(data);
+  res.json({ success: true, feedback: data[index] });
+});
+
+// 获取统计数据
+app.get('/api/stats', (req, res) => {
+  const data = readFeedback();
+
+  res.json({
+    total: data.length,
+    byType: {
+      bug: data.filter(item => item.type === 'bug').length,
+      suggestion: data.filter(item => item.type === 'suggestion').length,
+      inquiry: data.filter(item => item.type === 'inquiry').length
+    },
+    byStatus: {
+      pending: data.filter(item => item.status === 'pending').length,
+      processing: data.filter(item => item.status === 'processing').length,
+      completed: data.filter(item => item.status === 'completed').length
+    }
+  });
 });
 
 app.listen(PORT, () => {

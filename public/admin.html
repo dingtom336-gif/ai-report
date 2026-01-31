@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反馈管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .navbar-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .navbar-link:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .stat-card.bug .value { color: #dc3545; }
+        .stat-card.suggestion .value { color: #28a745; }
+        .stat-card.inquiry .value { color: #17a2b8; }
+        .stat-card.pending .value { color: #ffc107; }
+        .stat-card.processing .value { color: #007bff; }
+        .stat-card.completed .value { color: #28a745; }
+
+        .filters {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-refresh {
+            margin-left: auto;
+            padding: 8px 16px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-refresh:hover {
+            background: #5a67d8;
+        }
+
+        .feedback-list {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        .feedback-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .feedback-item:last-child {
+            border-bottom: none;
+        }
+
+        .feedback-item:hover {
+            background: #fafafa;
+        }
+
+        .feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .feedback-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1a1a2e;
+            flex: 1;
+        }
+
+        .feedback-badges {
+            display: flex;
+            gap: 8px;
+            margin-left: 16px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-bug { background: #ffe5e5; color: #dc3545; }
+        .badge-suggestion { background: #e5ffe5; color: #28a745; }
+        .badge-inquiry { background: #e5f7ff; color: #17a2b8; }
+
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-processing { background: #cce5ff; color: #004085; }
+        .badge-completed { background: #d4edda; color: #155724; }
+
+        .feedback-meta {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .feedback-meta span {
+            margin-right: 16px;
+        }
+
+        .feedback-detail {
+            display: none;
+            padding: 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .feedback-detail.show {
+            display: block;
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .detail-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .action-group label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .action-group select,
+        .action-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .action-group input {
+            width: 300px;
+        }
+
+        .btn-save {
+            padding: 8px 20px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            height: 36px;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+        }
+
+        .btn-delete {
+            padding: 8px 16px;
+            background: #fff;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            height: 36px;
+        }
+
+        .btn-delete:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            transform: translateX(150%);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-refresh {
+                margin-left: 0;
+            }
+
+            .action-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-group input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>反馈管理后台</h1>
+        <a href="/" class="navbar-link">返回用户端</a>
+    </nav>
+
+    <div class="container">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="label">总反馈数</div>
+                <div class="value" id="statTotal">-</div>
+            </div>
+            <div class="stat-card bug">
+                <div class="label">Bug</div>
+                <div class="value" id="statBug">-</div>
+            </div>
+            <div class="stat-card suggestion">
+                <div class="label">建议</div>
+                <div class="value" id="statSuggestion">-</div>
+            </div>
+            <div class="stat-card inquiry">
+                <div class="label">咨询</div>
+                <div class="value" id="statInquiry">-</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="label">待处理</div>
+                <div class="value" id="statPending">-</div>
+            </div>
+            <div class="stat-card processing">
+                <div class="label">处理中</div>
+                <div class="value" id="statProcessing">-</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="label">已完成</div>
+                <div class="value" id="statCompleted">-</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>类型：</label>
+                <select id="filterType" onchange="loadFeedback()">
+                    <option value="all">全部</option>
+                    <option value="bug">Bug</option>
+                    <option value="suggestion">建议</option>
+                    <option value="inquiry">咨询</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>状态：</label>
+                <select id="filterStatus" onchange="loadFeedback()">
+                    <option value="all">全部</option>
+                    <option value="pending">待处理</option>
+                    <option value="processing">处理中</option>
+                    <option value="completed">已完成</option>
+                </select>
+            </div>
+            <button class="btn-refresh" onclick="refresh()">刷新</button>
+        </div>
+
+        <div class="feedback-list" id="feedbackList">
+            <div class="empty-state">
+                <div class="icon">📋</div>
+                <p>加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const typeMap = { bug: 'Bug', suggestion: '建议', inquiry: '咨询' };
+        const statusMap = { pending: '待处理', processing: '处理中', completed: '已完成' };
+        let feedbackData = [];
+        let expandedId = null;
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statBug').textContent = stats.byType.bug;
+                document.getElementById('statSuggestion').textContent = stats.byType.suggestion;
+                document.getElementById('statInquiry').textContent = stats.byType.inquiry;
+                document.getElementById('statPending').textContent = stats.byStatus.pending;
+                document.getElementById('statProcessing').textContent = stats.byStatus.processing;
+                document.getElementById('statCompleted').textContent = stats.byStatus.completed;
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        async function loadFeedback() {
+            const type = document.getElementById('filterType').value;
+            const status = document.getElementById('filterStatus').value;
+
+            try {
+                const response = await fetch(`/api/feedback?type=${type}&status=${status}`);
+                feedbackData = await response.json();
+                renderFeedback();
+            } catch (error) {
+                console.error('加载反馈失败:', error);
+                document.getElementById('feedbackList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">😕</div>
+                        <p>加载失败，请重试</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderFeedback() {
+            const listEl = document.getElementById('feedbackList');
+
+            if (feedbackData.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>暂无反馈数据</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = feedbackData.map(item => `
+                <div class="feedback-item" onclick="toggleDetail('${item.id}')">
+                    <div class="feedback-header">
+                        <div class="feedback-title">${escapeHtml(item.title)}</div>
+                        <div class="feedback-badges">
+                            <span class="badge badge-${item.type}">${typeMap[item.type]}</span>
+                            <span class="badge badge-${item.status}">${statusMap[item.status]}</span>
+                        </div>
+                    </div>
+                    <div class="feedback-meta">
+                        <span>ID: ${item.id.slice(0, 8)}</span>
+                        <span>${formatDate(item.createdAt)}</span>
+                        ${item.contact ? `<span>联系: ${escapeHtml(item.contact)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="feedback-detail ${expandedId === item.id ? 'show' : ''}" id="detail-${item.id}">
+                    <div class="detail-section">
+                        <div class="detail-label">详细描述</div>
+                        <div class="detail-content">${escapeHtml(item.description)}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="action-row">
+                            <div class="action-group">
+                                <label>状态</label>
+                                <select id="status-${item.id}">
+                                    <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>待处理</option>
+                                    <option value="processing" ${item.status === 'processing' ? 'selected' : ''}>处理中</option>
+                                    <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>已完成</option>
+                                </select>
+                            </div>
+                            <div class="action-group" style="flex: 1;">
+                                <label>处理备注</label>
+                                <input type="text" id="note-${item.id}" value="${escapeHtml(item.note)}" placeholder="添加处理备注...">
+                            </div>
+                            <button class="btn-save" onclick="event.stopPropagation(); updateFeedback('${item.id}')">保存</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteFeedback('${item.id}')">删除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleDetail(id) {
+            expandedId = expandedId === id ? null : id;
+            renderFeedback();
+        }
+
+        async function updateFeedback(id) {
+            const status = document.getElementById(`status-${id}`).value;
+            const note = document.getElementById(`note-${id}`).value;
+
+            try {
+                const response = await fetch(`/api/feedback/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, note })
+                });
+
+                if (!response.ok) throw new Error('更新失败');
+
+                showToast('保存成功', 'success');
+                refresh();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function deleteFeedback(id) {
+            if (!confirm('确定要删除这条反馈吗？')) return;
+
+            try {
+                const response = await fetch(`/api/feedback/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('删除失败');
+
+                showToast('删除成功', 'success');
+                expandedId = null;
+                refresh();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function refresh() {
+            loadStats();
+            loadFeedback();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // 初始化
+        refresh();
+    </script>
+</body>
+</html>
