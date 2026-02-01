@@ -1,9 +1,9 @@
 {
-  "name": "ai-report",
+  "name": "feedback-system",
   "version": "1.0.0",
-  "description": "AI周报润色工具",
-  "type": "module",
+  "description": "用户反馈收集系统",
   "main": "server.js",
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -12,9 +12,11 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "https-proxy-agent": "^7.0.6"
+    "https-proxy-agent": "^7.0.2",
+    "jsonwebtoken": "^9.0.3"
   }
 }

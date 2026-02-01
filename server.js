@@ -4,8 +4,12 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { randomUUID } from 'crypto';
+
+// 数据库和认证模块
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats } from './db/database.js';
+import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
+import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -263,9 +267,180 @@ function parseReActResponse(response) {
   };
 }
 
-// AI对话修改接口
-app.post('/api/chat', async (req, res) => {
-  const { currentReport, message, history = [] } = req.body;
+// ========== 认证 API ==========
+
+// 注册
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password, nickname } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: '邮箱和密码不能为空' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: '密码至少6位' });
+  }
+
+  // 检查邮箱是否已存在
+  const existing = Users.findByEmail(email);
+  if (existing) {
+    return res.status(400).json({ error: '该邮箱已注册' });
+  }
+
+  try {
+    const passwordHash = hashPassword(password);
+    const userId = Users.create({
+      email,
+      password_hash: passwordHash,
+      nickname: nickname || email.split('@')[0]
+    });
+
+    const user = Users.findById(userId);
+    Users.updateLastLogin(userId);
+
+    // 记录注册日志
+    UsageLogs.create({ user_id: userId, action: 'register' });
+
+    const token = generateToken(user);
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        nickname: user.nickname,
+        role: user.role,
+        plan: user.plan
+      }
+    });
+  } catch (error) {
+    console.error('注册失败:', error);
+    res.status(500).json({ error: '注册失败，请稍后重试' });
+  }
+});
+
+// 登录
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: '邮箱和密码不能为空' });
+  }
+
+  const user = Users.findByEmail(email);
+  if (!user) {
+    return res.status(401).json({ error: '邮箱或密码错误' });
+  }
+
+  if (!verifyPassword(password, user.password_hash)) {
+    return res.status(401).json({ error: '邮箱或密码错误' });
+  }
+
+  Users.updateLastLogin(user.id);
+  UsageLogs.create({ user_id: user.id, action: 'login' });
+
+  const token = generateToken(user);
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      role: user.role,
+      plan: user.plan
+    }
+  });
+});
+
+// 获取当前用户信息
+app.get('/api/auth/me', verifyToken, (req, res) => {
+  const permissions = getUserPermissions(req.user);
+  res.json({
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      nickname: req.user.nickname,
+      role: req.user.role,
+      plan: req.user.plan,
+      daily_usage: req.user.daily_usage
+    },
+    permissions
+  });
+});
+
+// ========== 润色接口 (支持登录和游客) ==========
+app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
+  const { content, role = 'pm', template, useTemplate } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: '请输入周报内容' });
+  }
+
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return res.status(500).json({ error: 'API Key 未配置' });
+  }
+
+  // 登录用户检查用量
+  if (req.user) {
+    const usageResult = Users.checkAndIncrementUsage(req.user);
+    if (!usageResult.allowed) {
+      return res.status(429).json({
+        error: '今日免费次数已用完',
+        code: 'DAILY_LIMIT_REACHED',
+        limit: usageResult.limit
+      });
+    }
+  }
+
+  const validRoles = ['dev', 'ops', 'pm'];
+  const finalRole = validRoles.includes(role) ? role : 'pm';
+
+  try {
+    const prompt = buildPrompt(content, finalRole, template, useTemplate);
+    const data = await callDeepSeekAPI(prompt);
+    const result = data.choices[0].message.content;
+
+    // 登录用户保存周报
+    let reportId = null;
+    if (req.user) {
+      reportId = Reports.create({
+        user_id: req.user.id,
+        original_content: content,
+        polished_content: result,
+        role_type: finalRole,
+        used_template: useTemplate && template
+      });
+      UsageLogs.create({
+        user_id: req.user.id,
+        action: 'polish',
+        metadata: { role: finalRole, reportId }
+      });
+    }
+
+    res.json({
+      result,
+      reportId,
+      usageInfo: req.user ? {
+        remaining: req.user.plan === 'pro' ? null : (3 - req.user.daily_usage - 1),
+        limit: req.user.plan === 'pro' ? null : 3
+      } : null
+    });
+  } catch (error) {
+    console.error('API 调用失败:', error.status, error.data || error.message);
+
+    if (error.status === 401) {
+      return res.status(401).json({ error: 'API Key 无效' });
+    }
+    if (error.status === 429) {
+      return res.status(429).json({ error: '请求过于频繁，请稍后重试' });
+    }
+
+    res.status(500).json({ error: `润色失败: ${error.message || '请稍后重试'}` });
+  }
+});
+
+// ========== AI 对话修改接口 (需要登录+Pro) ==========
+app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
+  const { currentReport, message, history = [], reportId } = req.body;
 
   if (!currentReport || !currentReport.trim()) {
     return res.status(400).json({ error: '当前周报内容不能为空' });
@@ -285,6 +460,26 @@ app.post('/api/chat', async (req, res) => {
     const rawResponse = data.choices[0].message.content;
     const parsed = parseReActResponse(rawResponse);
 
+    // 保存对话历史
+    if (reportId) {
+      ChatHistory.create({
+        report_id: reportId,
+        user_message: message,
+        ai_thought: parsed.thought,
+        ai_action: parsed.newReport,
+        ai_observation: parsed.observation
+      });
+
+      // 更新周报内容
+      Reports.update(reportId, parsed.newReport);
+    }
+
+    UsageLogs.create({
+      user_id: req.user.id,
+      action: 'chat',
+      metadata: { reportId }
+    });
+
     res.json(parsed);
   } catch (error) {
     console.error('Chat API 调用失败:', error.status, error.data || error.message);
@@ -300,119 +495,155 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// 润色接口
-app.post('/api/polish', async (req, res) => {
-  const { content, role = 'pm', template, useTemplate } = req.body;
-
-  if (!content || !content.trim()) {
-    return res.status(400).json({ error: '请输入周报内容' });
-  }
-
-  if (!process.env.DEEPSEEK_API_KEY) {
-    return res.status(500).json({ error: 'API Key 未配置' });
-  }
-
-  const validRoles = ['dev', 'ops', 'pm'];
-  const finalRole = validRoles.includes(role) ? role : 'pm';
-
-  try {
-    const prompt = buildPrompt(content, finalRole, template, useTemplate);
-    const data = await callDeepSeekAPI(prompt);
-    const result = data.choices[0].message.content;
-    res.json({ result });
-  } catch (error) {
-    console.error('API 调用失败:', error.status, error.data || error.message);
-
-    if (error.status === 401) {
-      return res.status(401).json({ error: 'API Key 无效' });
-    }
-    if (error.status === 429) {
-      return res.status(429).json({ error: '请求过于频繁，请稍后重试' });
-    }
-
-    res.status(500).json({ error: `润色失败: ${error.message || '请稍后重试'}` });
-  }
+// ========== 周报历史 API ==========
+app.get('/api/reports', verifyToken, (req, res) => {
+  const limit = getHistoryLimit(req.user);
+  const reports = Reports.findByUserId(req.user.id, limit);
+  res.json({
+    reports,
+    limit,
+    total: Reports.countByUserId(req.user.id)
+  });
 });
 
-// ========== 反馈系统 API ==========
-const DATA_DIR = join(__dirname, 'data');
-const FEEDBACK_FILE = join(DATA_DIR, 'feedback.json');
-
-if (!existsSync(DATA_DIR)) {
-  mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function readFeedback() {
-  if (!existsSync(FEEDBACK_FILE)) {
-    writeFileSync(FEEDBACK_FILE, '[]');
-    return [];
+app.get('/api/reports/:id', verifyToken, (req, res) => {
+  const report = Reports.findById(req.params.id);
+  if (!report || report.user_id !== req.user.id) {
+    return res.status(404).json({ error: '周报不存在' });
   }
-  return JSON.parse(readFileSync(FEEDBACK_FILE, 'utf-8') || '[]');
-}
 
-function writeFeedback(data) {
-  writeFileSync(FEEDBACK_FILE, JSON.stringify(data, null, 2));
-}
+  const chatHistory = ChatHistory.findByReportId(report.id);
+  res.json({ report, chatHistory });
+});
 
-app.post('/api/feedback', (req, res) => {
+app.delete('/api/reports/:id', verifyToken, (req, res) => {
+  const result = Reports.delete(req.params.id, req.user.id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: '周报不存在' });
+  }
+  res.json({ success: true });
+});
+
+// ========== 范本 API (Pro) ==========
+app.get('/api/templates', verifyToken, (req, res) => {
+  const templates = Templates.findByUserId(req.user.id);
+  res.json(templates);
+});
+
+app.post('/api/templates', verifyToken, checkTemplateAccess, (req, res) => {
+  const { name, content } = req.body;
+  if (!content) {
+    return res.status(400).json({ error: '范本内容不能为空' });
+  }
+
+  const id = Templates.create({
+    user_id: req.user.id,
+    name: name || '默认范本',
+    content
+  });
+
+  res.json({ success: true, id });
+});
+
+app.put('/api/templates/:id', verifyToken, checkTemplateAccess, (req, res) => {
+  const { name, content } = req.body;
+  Templates.update(req.params.id, req.user.id, { name, content });
+  res.json({ success: true });
+});
+
+app.delete('/api/templates/:id', verifyToken, (req, res) => {
+  Templates.delete(req.params.id, req.user.id);
+  res.json({ success: true });
+});
+
+// ========== 用户统计 ==========
+app.get('/api/user/stats', verifyToken, (req, res) => {
+  const reportCount = Reports.countByUserId(req.user.id);
+  const templates = Templates.findByUserId(req.user.id);
+
+  res.json({
+    reports: reportCount,
+    templates: templates.length,
+    plan: req.user.plan,
+    daily_usage: req.user.daily_usage,
+    permissions: getUserPermissions(req.user)
+  });
+});
+
+// ========== 埋点 API ==========
+app.post('/api/log', optionalToken, (req, res) => {
+  const { action, metadata } = req.body;
+  UsageLogs.create({
+    user_id: req.user?.id || null,
+    action,
+    metadata
+  });
+  res.json({ success: true });
+});
+
+// ========== 反馈系统 API (使用数据库) ==========
+app.post('/api/feedback', optionalToken, (req, res) => {
   const { type, title, description, contact } = req.body;
   if (!type || !title || !description) {
     return res.status(400).json({ error: '请填写完整信息' });
   }
 
-  const feedback = {
+  Feedback.create({
     id: randomUUID(),
-    type, title, description,
+    type,
+    title,
+    description,
     contact: contact || '',
     status: 'pending',
-    note: '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+    note: ''
+  });
 
-  const data = readFeedback();
-  data.unshift(feedback);
-  writeFeedback(data);
-  res.json({ success: true, id: feedback.id });
+  res.json({ success: true });
 });
 
 app.get('/api/feedback', (req, res) => {
   const { type, status } = req.query;
-  let data = readFeedback();
-  if (type && type !== 'all') data = data.filter(item => item.type === type);
-  if (status && status !== 'all') data = data.filter(item => item.status === status);
+  const data = Feedback.findAll({ type, status });
   res.json(data);
 });
 
-app.put('/api/feedback/:id', (req, res) => {
+app.put('/api/feedback/:id', verifyToken, requireAdmin, (req, res) => {
   const { status, note } = req.body;
-  const data = readFeedback();
-  const index = data.findIndex(item => item.id === req.params.id);
-  if (index === -1) return res.status(404).json({ error: '反馈不存在' });
+  const feedback = Feedback.findById(req.params.id);
+  if (!feedback) {
+    return res.status(404).json({ error: '反馈不存在' });
+  }
 
-  if (status) data[index].status = status;
-  if (note !== undefined) data[index].note = note;
-  data[index].updatedAt = new Date().toISOString();
-
-  writeFeedback(data);
-  res.json({ success: true, feedback: data[index] });
+  Feedback.update(req.params.id, { status, note });
+  res.json({ success: true });
 });
 
 app.get('/api/stats', (req, res) => {
-  const data = readFeedback();
+  res.json(Feedback.getStats());
+});
+
+// ========== 管理后台 API ==========
+app.get('/api/admin/stats', verifyToken, requireAdmin, (req, res) => {
+  const overview = AdminStats.getOverview();
+  const feedbackStats = Feedback.getStats();
+
   res.json({
-    total: data.length,
-    byType: {
-      bug: data.filter(item => item.type === 'bug').length,
-      suggestion: data.filter(item => item.type === 'suggestion').length,
-      inquiry: data.filter(item => item.type === 'inquiry').length
-    },
-    byStatus: {
-      pending: data.filter(item => item.status === 'pending').length,
-      processing: data.filter(item => item.status === 'processing').length,
-      completed: data.filter(item => item.status === 'completed').length
-    }
+    ...overview,
+    feedback: feedbackStats
   });
+});
+
+app.get('/api/admin/users', verifyToken, requireAdmin, (req, res) => {
+  const users = Users.listAll();
+  res.json(users);
+});
+
+app.get('/api/admin/trends', verifyToken, requireAdmin, (req, res) => {
+  const days = parseInt(req.query.days) || 7;
+  const trends = AdminStats.getUsageTrends(days);
+  const usersByPlan = AdminStats.getUsersByPlan();
+
+  res.json({ trends, usersByPlan });
 });
 
 app.listen(PORT, () => {
