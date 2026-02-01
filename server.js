@@ -1151,6 +1151,64 @@ app.get('/api/admin/trends', verifyToken, requireAdmin, (req, res) => {
   res.json({ trends, usersByPlan });
 });
 
+// 增强的统计数据
+app.get('/api/admin/enhanced-stats', verifyToken, requireAdmin, (req, res) => {
+  const activeUsers = AdminStats.getActiveUsers();
+  const roleDistribution = AdminStats.getRoleDistribution();
+  const ratingStats = AdminStats.getRatingStats();
+  const todayStats = AdminStats.getTodayStats();
+
+  res.json({
+    activeUsers,
+    roleDistribution,
+    ratingStats,
+    todayStats
+  });
+});
+
+// 获取用户详情（包含周报）
+app.get('/api/admin/users/:id', verifyToken, requireAdmin, (req, res) => {
+  const user = Users.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: '用户不存在' });
+  }
+
+  const reports = Reports.findByUserId(user.id);
+  const customRolesCount = CustomRoles.countByUserId(user.id);
+
+  res.json({
+    ...user,
+    password_hash: undefined,
+    reports,
+    customRolesCount
+  });
+});
+
+// 更新用户计划
+app.put('/api/admin/users/:id/plan', verifyToken, requireAdmin, (req, res) => {
+  const { plan } = req.body;
+  const validPlans = ['free', 'pro'];
+
+  if (!validPlans.includes(plan)) {
+    return res.status(400).json({ error: '无效的计划类型' });
+  }
+
+  const user = Users.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: '用户不存在' });
+  }
+
+  Users.updatePlan(req.params.id, plan);
+
+  UsageLogs.create({
+    user_id: req.user.id,
+    action: 'admin_update_plan',
+    metadata: { targetUserId: req.params.id, newPlan: plan, oldPlan: user.plan }
+  });
+
+  res.json({ success: true, plan });
+});
+
 app.listen(PORT, () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
 });

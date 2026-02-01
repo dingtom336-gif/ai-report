@@ -439,6 +439,128 @@
       color: #999;
     }
 
+    /* 操作按钮 */
+    .btn-action {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .btn-view {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .btn-view:hover {
+      background: #bbdefb;
+    }
+    .btn-upgrade {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      margin-left: 6px;
+    }
+    .btn-upgrade:hover {
+      transform: scale(1.05);
+    }
+    .btn-downgrade {
+      background: #f5f5f5;
+      color: #666;
+      margin-left: 6px;
+    }
+    .btn-downgrade:hover {
+      background: #e0e0e0;
+    }
+
+    /* 用户详情 */
+    .user-detail-row {
+      display: flex;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .user-detail-row:last-child {
+      border-bottom: none;
+    }
+    .user-detail-label {
+      width: 100px;
+      color: #666;
+      font-size: 13px;
+    }
+    .user-detail-value {
+      flex: 1;
+      color: #333;
+      font-size: 14px;
+    }
+    .user-reports-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    .user-reports-section h4 {
+      margin-bottom: 12px;
+      color: #333;
+      font-size: 14px;
+    }
+    .user-report-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .user-report-item .meta {
+      color: #999;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .plan-switch {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .plan-switch h4 {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .plan-switch-btns {
+      display: flex;
+      gap: 10px;
+    }
+    .plan-switch-btns button {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .plan-switch-btns button:hover {
+      border-color: #667eea;
+    }
+    .plan-switch-btns button.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    /* 统计卡片高亮 */
+    .stat-card.highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .stat-card.highlight .label {
+      color: rgba(255,255,255,0.8);
+    }
+    .stat-card.highlight .value {
+      color: white;
+    }
+    .stat-card.highlight .sub {
+      color: rgba(255,255,255,0.7);
+    }
+
     @media (max-width: 768px) {
       .charts-section {
         grid-template-columns: 1fr;
@@ -490,6 +612,7 @@
     <!-- 概览 -->
     <div class="content-section active" id="overview">
       <div class="stats-grid" id="statsGrid"></div>
+      <div class="stats-grid" id="enhancedStatsGrid"></div>
       <div class="charts-section">
         <div class="chart-card">
           <h3>近7天使用趋势</h3>
@@ -500,6 +623,16 @@
           <canvas id="usersChart"></canvas>
         </div>
       </div>
+      <div class="charts-section">
+        <div class="chart-card">
+          <h3>角色使用分布</h3>
+          <canvas id="roleChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>满意度分布</h3>
+          <canvas id="ratingChart"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- 用户管理 -->
@@ -508,12 +641,13 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>邮箱</th>
+            <th>手机/邮箱</th>
             <th>昵称</th>
             <th>角色</th>
             <th>版本</th>
+            <th>周报数</th>
             <th>注册时间</th>
-            <th>最后登录</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody id="usersTable"></tbody>
@@ -551,7 +685,18 @@
     </div>
   </div>
 
-  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(0,0,0,0.3);">v1.9.0</div>
+  <!-- 用户详情弹窗 -->
+  <div class="modal" id="userModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>用户详情</h2>
+        <button class="close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="userModalBody"></div>
+    </div>
+  </div>
+
+  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(0,0,0,0.3);">v2.0.0</div>
 
   <script>
     const TOKEN_KEY = 'ai_report_token';
@@ -560,6 +705,9 @@
     let adminUser = null;
     let trendsChart = null;
     let usersChart = null;
+    let roleChart = null;
+    let ratingChart = null;
+    let usersData = [];
 
     // 检查登录状态
     function checkAuth() {
@@ -644,16 +792,19 @@
     // 加载概览
     async function loadOverview() {
       try {
-        const [statsRes, trendsRes] = await Promise.all([
+        const [statsRes, trendsRes, enhancedRes] = await Promise.all([
           fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${adminToken}` }}),
-          fetch('/api/admin/trends?days=7', { headers: { 'Authorization': `Bearer ${adminToken}` }})
+          fetch('/api/admin/trends?days=7', { headers: { 'Authorization': `Bearer ${adminToken}` }}),
+          fetch('/api/admin/enhanced-stats', { headers: { 'Authorization': `Bearer ${adminToken}` }})
         ]);
 
         const stats = await statsRes.json();
         const trends = await trendsRes.json();
+        const enhanced = await enhancedRes.json();
 
         renderStats(stats);
-        renderCharts(trends);
+        renderEnhancedStats(enhanced);
+        renderCharts(trends, enhanced);
       } catch (err) {
         console.error('加载概览失败:', err);
       }
@@ -681,7 +832,34 @@
       `;
     }
 
-    function renderCharts(data) {
+    function renderEnhancedStats(enhanced) {
+      const grid = document.getElementById('enhancedStatsGrid');
+      const { activeUsers, todayStats, ratingStats } = enhanced;
+
+      grid.innerHTML = `
+        <div class="stat-card highlight">
+          <div class="label">今日润色</div>
+          <div class="value">${todayStats.polishCount}</div>
+          <div class="sub">AI对话 ${todayStats.chatCount} 次</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">今日新用户</div>
+          <div class="value">${todayStats.newUsers}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">活跃用户 (日/周/月)</div>
+          <div class="value">${activeUsers.daily}</div>
+          <div class="sub">${activeUsers.weekly} / ${activeUsers.monthly}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">平均满意度</div>
+          <div class="value">${ratingStats.averageRating || '-'}</div>
+          <div class="sub">共 ${ratingStats.totalRatings} 条评价</div>
+        </div>
+      `;
+    }
+
+    function renderCharts(data, enhanced) {
       // 趋势图
       const trendsCtx = document.getElementById('trendsChart').getContext('2d');
 
@@ -737,6 +915,59 @@
           }
         }
       });
+
+      // 角色分布图
+      const roleCtx = document.getElementById('roleChart').getContext('2d');
+      if (roleChart) roleChart.destroy();
+
+      const roleData = enhanced?.roleDistribution || [];
+      const roleNames = { pm: '产品经理', dev: '开发工程师', ops: '运营', custom: '自定义' };
+      const roleColors = { pm: '#667eea', dev: '#00c853', ops: '#ff9800', custom: '#e91e63' };
+
+      roleChart = new Chart(roleCtx, {
+        type: 'bar',
+        data: {
+          labels: roleData.map(r => roleNames[r.role_type] || r.role_type),
+          datasets: [{
+            label: '使用次数',
+            data: roleData.map(r => r.count),
+            backgroundColor: roleData.map(r => roleColors[r.role_type] || '#999')
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // 满意度分布图
+      const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+      if (ratingChart) ratingChart.destroy();
+
+      const ratingData = enhanced?.ratingStats?.distribution || [];
+      const ratingLabels = ['1星', '2星', '3星', '4星', '5星'];
+      const ratingCounts = [1, 2, 3, 4, 5].map(r => {
+        const found = ratingData.find(d => d.rating === r);
+        return found ? found.count : 0;
+      });
+
+      ratingChart = new Chart(ratingCtx, {
+        type: 'bar',
+        data: {
+          labels: ratingLabels,
+          datasets: [{
+            label: '评价数',
+            data: ratingCounts,
+            backgroundColor: ['#e53935', '#ff7043', '#ffa726', '#66bb6a', '#26a69a']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
     }
 
     // 加载用户
@@ -745,22 +976,147 @@
         const res = await fetch('/api/admin/users', {
           headers: { 'Authorization': `Bearer ${adminToken}` }
         });
-        const users = await res.json();
+        usersData = await res.json();
 
         const tbody = document.getElementById('usersTable');
-        tbody.innerHTML = users.map(u => `
+        tbody.innerHTML = usersData.map(u => `
           <tr>
             <td>${u.id}</td>
-            <td>${u.email}</td>
+            <td>${u.phone || u.email || '-'}</td>
             <td>${u.nickname || '-'}</td>
             <td><span class="role-badge ${u.role}">${u.role}</span></td>
             <td><span class="plan-badge ${u.plan}">${u.plan.toUpperCase()}</span></td>
+            <td>${u.report_count || 0}</td>
             <td>${formatDate(u.created_at)}</td>
-            <td>${u.last_login ? formatDate(u.last_login) : '-'}</td>
+            <td>
+              <button class="btn-action btn-view" onclick="openUserDetail(${u.id})">详情</button>
+              ${u.plan === 'free' && u.role !== 'admin'
+                ? `<button class="btn-action btn-upgrade" onclick="updateUserPlan(${u.id}, 'pro')">升级Pro</button>`
+                : u.plan === 'pro' && u.role !== 'admin'
+                  ? `<button class="btn-action btn-downgrade" onclick="updateUserPlan(${u.id}, 'free')">降级Free</button>`
+                  : ''
+              }
+            </td>
           </tr>
         `).join('');
       } catch (err) {
         console.error('加载用户失败:', err);
+      }
+    }
+
+    // 打开用户详情
+    async function openUserDetail(userId) {
+      try {
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        const user = await res.json();
+
+        const reports = user.reports || [];
+        const reportsHtml = reports.length > 0
+          ? reports.slice(0, 5).map(r => `
+              <div class="user-report-item">
+                <div>${escapeHtml(r.original_content.substring(0, 100))}${r.original_content.length > 100 ? '...' : ''}</div>
+                <div class="meta">${r.role_type} · ${formatDate(r.created_at)}</div>
+              </div>
+            `).join('')
+          : '<div class="empty" style="padding: 20px;">暂无周报记录</div>';
+
+        document.getElementById('userModalBody').innerHTML = `
+          <div class="user-detail-row">
+            <div class="user-detail-label">ID</div>
+            <div class="user-detail-value">${user.id}</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">手机号</div>
+            <div class="user-detail-value">${user.phone || '-'}</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">邮箱</div>
+            <div class="user-detail-value">${user.email || '-'}</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">昵称</div>
+            <div class="user-detail-value">${user.nickname || '-'}</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">角色</div>
+            <div class="user-detail-value"><span class="role-badge ${user.role}">${user.role}</span></div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">计划</div>
+            <div class="user-detail-value"><span class="plan-badge ${user.plan}">${user.plan.toUpperCase()}</span></div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">今日使用</div>
+            <div class="user-detail-value">${user.daily_usage || 0} 次</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">自定义角色</div>
+            <div class="user-detail-value">${user.customRolesCount || 0} 个</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">注册时间</div>
+            <div class="user-detail-value">${formatDate(user.created_at)}</div>
+          </div>
+          <div class="user-detail-row">
+            <div class="user-detail-label">最后登录</div>
+            <div class="user-detail-value">${user.last_login ? formatDate(user.last_login) : '-'}</div>
+          </div>
+
+          ${user.role !== 'admin' ? `
+          <div class="plan-switch">
+            <h4>修改计划</h4>
+            <div class="plan-switch-btns">
+              <button class="${user.plan === 'free' ? 'active' : ''}" onclick="updateUserPlan(${user.id}, 'free')">Free</button>
+              <button class="${user.plan === 'pro' ? 'active' : ''}" onclick="updateUserPlan(${user.id}, 'pro')">Pro</button>
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="user-reports-section">
+            <h4>最近周报 (${reports.length})</h4>
+            ${reportsHtml}
+          </div>
+        `;
+
+        document.getElementById('userModal').classList.add('active');
+      } catch (err) {
+        console.error('加载用户详情失败:', err);
+        alert('加载失败');
+      }
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.remove('active');
+    }
+
+    // 更新用户计划
+    async function updateUserPlan(userId, plan) {
+      if (!confirm(`确定要将此用户${plan === 'pro' ? '升级为 Pro' : '降级为 Free'}？`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/plan`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ plan })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+
+        alert('更新成功');
+        loadUsers();
+        closeUserModal();
+      } catch (err) {
+        alert('更新失败: ' + err.message);
       }
     }
 

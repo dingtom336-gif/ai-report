@@ -926,6 +926,80 @@ export const AdminStats = {
       SELECT plan, COUNT(*) as count FROM users GROUP BY plan
     `);
     return stmt.all();
+  },
+
+  // 活跃用户统计
+  getActiveUsers() {
+    const daily = db.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM usage_logs
+      WHERE created_at >= datetime('now', '-1 day') AND user_id IS NOT NULL
+    `).get();
+
+    const weekly = db.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM usage_logs
+      WHERE created_at >= datetime('now', '-7 days') AND user_id IS NOT NULL
+    `).get();
+
+    const monthly = db.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM usage_logs
+      WHERE created_at >= datetime('now', '-30 days') AND user_id IS NOT NULL
+    `).get();
+
+    return {
+      daily: daily.count,
+      weekly: weekly.count,
+      monthly: monthly.count
+    };
+  },
+
+  // 角色使用分布
+  getRoleDistribution() {
+    const stmt = db.prepare(`
+      SELECT role_type, COUNT(*) as count FROM reports
+      GROUP BY role_type ORDER BY count DESC
+    `);
+    return stmt.all();
+  },
+
+  // 满意度统计
+  getRatingStats() {
+    const avg = db.prepare(`
+      SELECT AVG(rating) as avg_rating, COUNT(*) as count FROM report_ratings
+    `).get();
+
+    const distribution = db.prepare(`
+      SELECT rating, COUNT(*) as count FROM report_ratings GROUP BY rating ORDER BY rating
+    `).all();
+
+    return {
+      averageRating: avg.avg_rating ? Math.round(avg.avg_rating * 10) / 10 : null,
+      totalRatings: avg.count,
+      distribution
+    };
+  },
+
+  // 今日统计
+  getTodayStats() {
+    const polishCount = db.prepare(`
+      SELECT COUNT(*) as count FROM usage_logs
+      WHERE action = 'polish' AND DATE(created_at) = DATE('now')
+    `).get();
+
+    const chatCount = db.prepare(`
+      SELECT COUNT(*) as count FROM usage_logs
+      WHERE action = 'chat' AND DATE(created_at) = DATE('now')
+    `).get();
+
+    const newUsers = db.prepare(`
+      SELECT COUNT(*) as count FROM users
+      WHERE DATE(created_at) = DATE('now')
+    `).get();
+
+    return {
+      polishCount: polishCount.count,
+      chatCount: chatCount.count,
+      newUsers: newUsers.count
+    };
   }
 };
 
