@@ -334,7 +334,7 @@
     </div>
   </div>
 
-  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v1.4.1</div>
+  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v1.4.2</div>
 
   <script>
     // Token 管理
@@ -360,9 +360,7 @@
       window.location.href = '/index.html';
     }
 
-    // 显示开发模式提示
-    // 在非生产环境显示
-    document.getElementById('dev-hint').classList.add('show');
+    // 开发模式提示默认隐藏，根据后端返回的 devMode 决定是否显示
 
     // 显示错误
     function showError(message) {
@@ -424,9 +422,12 @@
 
         showSuccess('验证码已发送');
 
-        // 如果返回了验证码（开发模式），自动填充
-        if (data.code) {
+        // 根据后端返回的 devMode 控制提示显示和验证码填充
+        if (data.devMode && data.code) {
+          document.getElementById('dev-hint').classList.add('show');
           document.getElementById('code').value = data.code;
+        } else {
+          document.getElementById('dev-hint').classList.remove('show');
         }
 
         // 开始倒计时

@@ -291,11 +291,13 @@ app.post('/api/auth/send-code', async (req, res) => {
 
     UsageLogs.create({ action: 'send_code', metadata: { phone: phone.slice(0, 3) + '****' + phone.slice(-4) } });
 
+    const devMode = process.env.NODE_ENV !== 'production';
     res.json({
       success: true,
       message: '验证码已发送',
+      devMode,
       // 开发模式返回验证码，生产环境移除
-      ...(process.env.NODE_ENV !== 'production' && { code })
+      ...(devMode && { code })
     });
   } catch (error) {
     console.error('发送验证码失败:', error);

@@ -311,7 +311,9 @@ export const VerificationCodes = {
 
   // 验证验证码
   verify(phone, code) {
+    console.log(`[验证码验证] phone=${phone}, code=${code}`);
     const record = codeQueries.findValid.get({ phone, code });
+    console.log(`[验证码验证] 查询结果:`, record ? `找到记录 id=${record.id}, expires_at=${record.expires_at}` : '未找到匹配记录');
     if (record) {
       codeQueries.markUsed.run(record.id);
       return true;
