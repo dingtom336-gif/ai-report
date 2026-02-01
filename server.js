@@ -344,6 +344,16 @@ app.post('/api/auth/login', async (req, res) => {
 
   // 验证验证码
   const isValid = VerificationCodes.verify(phone, code);
+
+  // 记录验证结果日志
+  UsageLogs.create({
+    action: 'verify_code',
+    metadata: {
+      phone: phone.slice(0, 3) + '****' + phone.slice(-4),
+      success: isValid
+    }
+  });
+
   if (!isValid) {
     return res.status(401).json({ error: '验证码错误或已过期' });
   }
@@ -679,6 +689,35 @@ app.get('/api/admin/trends', verifyToken, requireAdmin, (req, res) => {
   const usersByPlan = AdminStats.getUsersByPlan();
 
   res.json({ trends, usersByPlan });
+});
+
+// ========== 日志查看 API ==========
+app.get('/api/admin/logs', verifyToken, requireAdmin, (req, res) => {
+  const { action, limit = 100, offset = 0 } = req.query;
+  const limitNum = Math.min(parseInt(limit) || 100, 500);
+  const offsetNum = parseInt(offset) || 0;
+
+  let logs;
+  if (action && action !== 'all') {
+    logs = UsageLogs.findByAction(action, limitNum);
+  } else {
+    logs = UsageLogs.findAll(limitNum, offsetNum);
+  }
+
+  // 解析 metadata JSON
+  const parsedLogs = logs.map(log => ({
+    ...log,
+    metadata: JSON.parse(log.metadata || '{}')
+  }));
+
+  res.json({
+    logs: parsedLogs,
+    total: UsageLogs.countTotal()
+  });
+});
+
+app.get('/api/admin/logs/stats', verifyToken, requireAdmin, (req, res) => {
+  res.json(UsageLogs.getStats());
 });
 
 app.listen(PORT, () => {

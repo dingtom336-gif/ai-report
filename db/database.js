@@ -495,8 +495,20 @@ const usageLogQueries = {
     SELECT * FROM usage_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?
   `),
 
+  findAll: db.prepare(`
+    SELECT * FROM usage_logs ORDER BY created_at DESC LIMIT ? OFFSET ?
+  `),
+
+  findByAction: db.prepare(`
+    SELECT * FROM usage_logs WHERE action = ? ORDER BY created_at DESC LIMIT ?
+  `),
+
   countByAction: db.prepare(`
     SELECT action, COUNT(*) as count FROM usage_logs GROUP BY action
+  `),
+
+  countTotal: db.prepare(`
+    SELECT COUNT(*) as count FROM usage_logs
   `),
 
   recentActions: db.prepare(`
@@ -518,12 +530,30 @@ export const UsageLogs = {
     return usageLogQueries.findByUserId.all(userId, limit);
   },
 
+  findAll(limit = 100, offset = 0) {
+    return usageLogQueries.findAll.all(limit, offset);
+  },
+
+  findByAction(action, limit = 100) {
+    return usageLogQueries.findByAction.all(action, limit);
+  },
+
   countByAction() {
     return usageLogQueries.countByAction.all();
   },
 
+  countTotal() {
+    return usageLogQueries.countTotal.get().count;
+  },
+
   recentActions(limit = 100) {
     return usageLogQueries.recentActions.all(limit);
+  },
+
+  getStats() {
+    const byAction = usageLogQueries.countByAction.all();
+    const total = usageLogQueries.countTotal.get().count;
+    return { byAction, total };
   }
 };
 
