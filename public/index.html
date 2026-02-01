@@ -590,6 +590,78 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-tools {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-voice {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-voice:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .btn-voice.recording {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+            color: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .quick-templates {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .quick-template-btn {
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-template-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
         /* 输出区 */
         .output-section {
             flex: 1;
@@ -2334,7 +2406,25 @@
 
                 <!-- 输入区 -->
                 <div class="card input-section">
-                    <div class="section-title">✏️ 随便写，流水账也行</div>
+                    <div class="input-header">
+                        <div class="section-title">✏️ 随便写，流水账也行</div>
+                        <div class="input-tools">
+                            <button class="btn-voice" id="voiceBtn" onclick="toggleVoiceInput()" title="语音输入">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="quick-templates">
+                        <span class="quick-label">快速模板：</span>
+                        <button class="quick-template-btn" onclick="insertTemplate('成果')">📊 本周成果</button>
+                        <button class="quick-template-btn" onclick="insertTemplate('进展')">🚀 项目进展</button>
+                        <button class="quick-template-btn" onclick="insertTemplate('问题')">⚠️ 问题风险</button>
+                    </div>
                     <textarea class="input-textarea" id="contentInput" placeholder="把本周做的事随便写，比如：
 
 这周主要跟A项目，需求评审过了
@@ -2861,6 +2951,137 @@
             checkbox.checked = false;
             hint.textContent = '请先保存范本';
         }
+
+        // ========== 快速模板 ==========
+        const QUICK_TEMPLATES = {
+            '成果': `## 本周成果
+-
+-
+-
+
+## 关键指标
+-
+
+`,
+            '进展': `## 项目进展
+### [项目名称]
+- 本周完成：
+- 下周计划：
+- 风险/阻塞：
+
+`,
+            '问题': `## 问题与风险
+### 问题1
+- 问题描述：
+- 影响范围：
+- 解决方案：
+- 负责人/时间：
+
+`
+        };
+
+        function insertTemplate(type) {
+            const textarea = document.getElementById('contentInput');
+            const template = QUICK_TEMPLATES[type];
+            if (template) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                textarea.value = text.substring(0, start) + template + text.substring(end);
+                textarea.focus();
+                textarea.setSelectionRange(start + template.length, start + template.length);
+            }
+        }
+
+        // ========== 语音输入 ==========
+        let recognition = null;
+        let isRecording = false;
+
+        function initVoiceInput() {
+            const voiceBtn = document.getElementById('voiceBtn');
+
+            // 检查浏览器支持
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                if (voiceBtn) voiceBtn.style.display = 'none';
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onresult = (event) => {
+                const textarea = document.getElementById('contentInput');
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (finalTranscript) {
+                    textarea.value += finalTranscript;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('语音识别错误:', event.error);
+                stopVoiceInput();
+                if (event.error === 'not-allowed') {
+                    showToast('请允许麦克风权限', 'error');
+                } else {
+                    showToast('语音识别出错', 'error');
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    // 如果还在录音状态，重新启动（浏览器可能会自动停止）
+                    recognition.start();
+                }
+            };
+        }
+
+        function toggleVoiceInput() {
+            if (!recognition) {
+                showToast('您的浏览器不支持语音输入', 'error');
+                return;
+            }
+
+            if (isRecording) {
+                stopVoiceInput();
+            } else {
+                startVoiceInput();
+            }
+        }
+
+        function startVoiceInput() {
+            isRecording = true;
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.add('recording');
+            recognition.start();
+            showToast('开始语音输入...', 'info');
+        }
+
+        function stopVoiceInput() {
+            isRecording = false;
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.remove('recording');
+            if (recognition) {
+                recognition.stop();
+            }
+            showToast('语音输入已停止', 'info');
+        }
+
+        // 初始化语音输入
+        initVoiceInput();
 
         // ========== 润色功能（流式输出） ==========
         async function polish() {
@@ -3927,7 +4148,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.7.0</div>
+    <div class="version-footer">v1.8.0</div>
     <style>
         .version-footer {
             position: fixed;
