@@ -1749,6 +1749,60 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            padding: 6px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            color: #fff;
+        }
+
+        .undo-redo-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .undo-btn, .redo-btn {
+            width: 28px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .undo-btn:hover:not(:disabled), .redo-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .undo-btn:disabled, .redo-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         .agent-input-wrapper {
             display: flex;
             gap: 12px;
@@ -2664,7 +2718,28 @@
                 </div>
 
                 <div class="agent-input-area">
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="sendQuickAgentAction('让语言更专业')">更专业</button>
+                        <button class="quick-action-btn" onclick="sendQuickAgentAction('精简内容，突出重点')">更简洁</button>
+                        <button class="quick-action-btn" onclick="sendQuickAgentAction('补充数据支撑')">加数据</button>
+                        <button class="quick-action-btn" onclick="sendQuickAgentAction('调整为更正式的语气')">正式化</button>
+                        <button class="quick-action-btn" onclick="sendQuickAgentAction('优化排版结构')">优化结构</button>
+                    </div>
                     <div class="agent-input-wrapper">
+                        <div class="undo-redo-btns">
+                            <button class="undo-btn" id="undoBtn" onclick="undoAgentChange()" disabled title="撤销">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 7v6h6"></path>
+                                    <path d="M3 13a9 9 0 1 0 3-7.7L3 7"></path>
+                                </svg>
+                            </button>
+                            <button class="redo-btn" id="redoBtn" onclick="redoAgentChange()" disabled title="重做">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 7v6h-6"></path>
+                                    <path d="M21 13a9 9 0 1 1-3-7.7L21 7"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <textarea class="agent-input" id="agentInput" placeholder="告诉 Agent 你想怎么修改..." rows="1"></textarea>
                         <button class="agent-send-btn" id="agentSendBtn" onclick="sendAgentMessage()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3647,6 +3722,11 @@
             document.getElementById('agentPreviewContent').textContent = output.textContent;
             currentEditableReport = output.textContent;
 
+            // 初始化撤销栈
+            undoStack = [output.textContent];
+            redoStack = [];
+            updateUndoRedoButtons();
+
             // 显示面板
             document.getElementById('agentPanel').classList.add('show');
             document.getElementById('agentOverlay').classList.add('show');
@@ -3662,6 +3742,61 @@
             document.getElementById('agentPanel').classList.remove('show');
             document.getElementById('agentOverlay').classList.remove('show');
             document.body.style.overflow = '';
+        }
+
+        // ========== 撤销/重做功能 ==========
+        let undoStack = [];
+        let redoStack = [];
+
+        function saveToUndoStack(content) {
+            if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== content) {
+                undoStack.push(content);
+                redoStack = []; // 清空重做栈
+                updateUndoRedoButtons();
+            }
+        }
+
+        function undoAgentChange() {
+            if (undoStack.length <= 1) return;
+
+            const currentContent = undoStack.pop();
+            redoStack.push(currentContent);
+
+            const previousContent = undoStack[undoStack.length - 1];
+            currentEditableReport = previousContent;
+
+            // 更新预览
+            document.getElementById('agentPreviewContent').textContent = previousContent;
+            document.getElementById('outputContent').textContent = previousContent;
+
+            updateUndoRedoButtons();
+            showToast('已撤销', 'info');
+        }
+
+        function redoAgentChange() {
+            if (redoStack.length === 0) return;
+
+            const nextContent = redoStack.pop();
+            undoStack.push(nextContent);
+
+            currentEditableReport = nextContent;
+
+            // 更新预览
+            document.getElementById('agentPreviewContent').textContent = nextContent;
+            document.getElementById('outputContent').textContent = nextContent;
+
+            updateUndoRedoButtons();
+            showToast('已重做', 'info');
+        }
+
+        function updateUndoRedoButtons() {
+            document.getElementById('undoBtn').disabled = undoStack.length <= 1;
+            document.getElementById('redoBtn').disabled = redoStack.length === 0;
+        }
+
+        function sendQuickAgentAction(action) {
+            document.getElementById('agentInput').value = action;
+            sendAgentMessage();
         }
 
         function sendAgentQuick(action) {
@@ -3758,9 +3893,13 @@
 
                                 // 更新当前报告
                                 currentEditableReport = data.parsed.newReport;
+                                saveToUndoStack(data.parsed.newReport);
 
                                 // 更新预览
                                 document.getElementById('agentPreviewContent').textContent = data.parsed.newReport;
+
+                                // 同步到主输出
+                                document.getElementById('outputContent').textContent = data.parsed.newReport;
 
                                 // 更新状态
                                 updateAgentStatus('ready', 'Ready');
@@ -4148,7 +4287,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.8.0</div>
+    <div class="version-footer">v1.9.0</div>
     <style>
         .version-footer {
             position: fixed;
