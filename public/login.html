@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - AI 周报润色</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+    }
+
+    .auth-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .auth-header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .auth-header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid #eee;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      background: none;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .auth-tab.active {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .auth-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #667eea;
+    }
+
+    .auth-form {
+      padding: 30px;
+    }
+
+    .form-panel {
+      display: none;
+    }
+
+    .form-panel.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-message {
+      background: #fee;
+      color: #c00;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .success-message {
+      background: #efe;
+      color: #060;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 25px 0;
+      position: relative;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #ddd;
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    .guest-btn {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #666;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .guest-btn:hover {
+      background: #f8f8f8;
+      border-color: #ccc;
+    }
+
+    .features {
+      padding: 0 30px 30px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .features h3 {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-list .icon {
+      font-size: 16px;
+    }
+
+    .feature-list .pro-badge {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .auth-container {
+        border-radius: 12px;
+      }
+
+      .auth-header {
+        padding: 25px 20px;
+      }
+
+      .auth-form {
+        padding: 25px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>AI 周报润色</h1>
+      <p>让周报更专业，让汇报更轻松</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">登录</button>
+      <button class="auth-tab" data-tab="register">注册</button>
+    </div>
+
+    <div class="auth-form">
+      <div id="error-message" class="error-message"></div>
+      <div id="success-message" class="success-message"></div>
+
+      <!-- 登录表单 -->
+      <div class="form-panel active" id="login-panel">
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-email">邮箱</label>
+            <input type="email" id="login-email" placeholder="请输入邮箱" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input type="password" id="login-password" placeholder="请输入密码" required>
+          </div>
+          <button type="submit" class="submit-btn">登录</button>
+        </form>
+      </div>
+
+      <!-- 注册表单 -->
+      <div class="form-panel" id="register-panel">
+        <form id="register-form">
+          <div class="form-group">
+            <label for="register-email">邮箱</label>
+            <input type="email" id="register-email" placeholder="请输入邮箱" required>
+          </div>
+          <div class="form-group">
+            <label for="register-nickname">昵称（可选）</label>
+            <input type="text" id="register-nickname" placeholder="给自己起个名字">
+          </div>
+          <div class="form-group">
+            <label for="register-password">密码</label>
+            <input type="password" id="register-password" placeholder="至少6位" minlength="6" required>
+          </div>
+          <button type="submit" class="submit-btn">注册</button>
+        </form>
+      </div>
+
+      <div class="divider">或者</div>
+
+      <button class="guest-btn" onclick="guestMode()">
+        游客模式体验（每日3次）
+      </button>
+    </div>
+
+    <div class="features">
+      <h3>注册后解锁</h3>
+      <ul class="feature-list">
+        <li><span class="icon">✓</span> 周报历史记录</li>
+        <li><span class="icon">✓</span> 多端同步</li>
+        <li>
+          <span class="icon">★</span>
+          AI 对话修改
+          <span class="pro-badge">PRO</span>
+        </li>
+        <li>
+          <span class="icon">★</span>
+          范本学习
+          <span class="pro-badge">PRO</span>
+        </li>
+        <li>
+          <span class="icon">★</span>
+          全部角色
+          <span class="pro-badge">PRO</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Token 管理
+    const TOKEN_KEY = 'ai_report_token';
+    const USER_KEY = 'ai_report_user';
+
+    function saveAuth(token, user) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    function getUser() {
+      const user = localStorage.getItem(USER_KEY);
+      return user ? JSON.parse(user) : null;
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+
+    // 检查是否已登录
+    if (getToken()) {
+      window.location.href = '/index.html';
+    }
+
+    // Tab 切换
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`${targetTab}-panel`).classList.add('active');
+
+        hideMessages();
+      });
+    });
+
+    // 显示错误
+    function showError(message) {
+      const el = document.getElementById('error-message');
+      el.textContent = message;
+      el.classList.add('show');
+      document.getElementById('success-message').classList.remove('show');
+    }
+
+    // 显示成功
+    function showSuccess(message) {
+      const el = document.getElementById('success-message');
+      el.textContent = message;
+      el.classList.add('show');
+      document.getElementById('error-message').classList.remove('show');
+    }
+
+    // 隐藏消息
+    function hideMessages() {
+      document.getElementById('error-message').classList.remove('show');
+      document.getElementById('success-message').classList.remove('show');
+    }
+
+    // 登录
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      const btn = e.target.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = '登录中...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '登录失败');
+        }
+
+        saveAuth(data.token, data.user);
+        showSuccess('登录成功，正在跳转...');
+
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 500);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '登录';
+      }
+    });
+
+    // 注册
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+
+      const email = document.getElementById('register-email').value.trim();
+      const nickname = document.getElementById('register-nickname').value.trim();
+      const password = document.getElementById('register-password').value;
+
+      if (password.length < 6) {
+        showError('密码至少6位');
+        return;
+      }
+
+      const btn = e.target.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = '注册中...';
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, nickname })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '注册失败');
+        }
+
+        saveAuth(data.token, data.user);
+        showSuccess('注册成功，正在跳转...');
+
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 500);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '注册';
+      }
+    });
+
+    // 游客模式
+    function guestMode() {
+      clearAuth();
+      window.location.href = '/index.html';
+    }
+  </script>
+</body>
+</html>

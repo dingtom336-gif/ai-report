@@ -1,591 +1,403 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>反馈管理后台</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .navbar {
-            background: #fff;
-            padding: 16px 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar h1 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1a1a2e;
-        }
-
-        .navbar-link {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .navbar-link:hover {
-            text-decoration: underline;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .stat-card .label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .stat-card .value {
-            font-size: 28px;
-            font-weight: 600;
-            color: #1a1a2e;
-        }
-
-        .stat-card.bug .value { color: #dc3545; }
-        .stat-card.suggestion .value { color: #28a745; }
-        .stat-card.inquiry .value { color: #17a2b8; }
-        .stat-card.pending .value { color: #ffc107; }
-        .stat-card.processing .value { color: #007bff; }
-        .stat-card.completed .value { color: #28a745; }
-
-        .filters {
-            background: #fff;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-group label {
-            font-size: 14px;
-            color: #666;
-        }
-
-        select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn-refresh {
-            margin-left: auto;
-            padding: 8px 16px;
-            background: #667eea;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .btn-refresh:hover {
-            background: #5a67d8;
-        }
-
-        .feedback-list {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            overflow: hidden;
-        }
-
-        .feedback-item {
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .feedback-item:last-child {
-            border-bottom: none;
-        }
-
-        .feedback-item:hover {
-            background: #fafafa;
-        }
-
-        .feedback-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .feedback-title {
-            font-size: 16px;
-            font-weight: 500;
-            color: #1a1a2e;
-            flex: 1;
-        }
-
-        .feedback-badges {
-            display: flex;
-            gap: 8px;
-            margin-left: 16px;
-        }
-
-        .badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .badge-bug { background: #ffe5e5; color: #dc3545; }
-        .badge-suggestion { background: #e5ffe5; color: #28a745; }
-        .badge-inquiry { background: #e5f7ff; color: #17a2b8; }
-
-        .badge-pending { background: #fff3cd; color: #856404; }
-        .badge-processing { background: #cce5ff; color: #004085; }
-        .badge-completed { background: #d4edda; color: #155724; }
-
-        .feedback-meta {
-            font-size: 13px;
-            color: #999;
-        }
-
-        .feedback-meta span {
-            margin-right: 16px;
-        }
-
-        .feedback-detail {
-            display: none;
-            padding: 20px;
-            background: #f9f9f9;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .feedback-detail.show {
-            display: block;
-        }
-
-        .detail-section {
-            margin-bottom: 16px;
-        }
-
-        .detail-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .detail-label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 6px;
-        }
-
-        .detail-content {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #333;
-            white-space: pre-wrap;
-        }
-
-        .action-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .action-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .action-group label {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .action-group select,
-        .action-group input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .action-group input {
-            width: 300px;
-        }
-
-        .btn-save {
-            padding: 8px 20px;
-            background: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            height: 36px;
-        }
-
-        .btn-save:hover {
-            background: #218838;
-        }
-
-        .btn-delete {
-            padding: 8px 16px;
-            background: #fff;
-            color: #dc3545;
-            border: 1px solid #dc3545;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            height: 36px;
-        }
-
-        .btn-delete:hover {
-            background: #dc3545;
-            color: #fff;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #333;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            transform: translateX(150%);
-            transition: transform 0.3s;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-        }
-
-        .toast.success { background: #28a745; }
-        .toast.error { background: #dc3545; }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 16px;
-            }
-
-            .filters {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .btn-refresh {
-                margin-left: 0;
-            }
-
-            .action-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .action-group input {
-                width: 100%;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>反馈管理后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+    }
+    .header h1 { font-size: 22px; margin-bottom: 20px; }
+    .stats {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 15px 25px;
+      min-width: 120px;
+    }
+    .stat-card .num {
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .stat-card .label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .main {
+      padding: 20px 30px;
+    }
+    .filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filters select {
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+    .feedback-list {
+      display: grid;
+      gap: 15px;
+    }
+    .feedback-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .feedback-card:hover {
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    .card-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .tag {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag-bug { background: #ffe0e0; color: #d63031; }
+    .tag-suggest { background: #e0f0ff; color: #0984e3; }
+    .tag-consult { background: #e8f5e9; color: #27ae60; }
+    .status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-pending { background: #fff3e0; color: #f39c12; }
+    .status-processing { background: #e3f2fd; color: #2196f3; }
+    .status-completed { background: #e8f5e9; color: #4caf50; }
+    .card-desc {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      color: #999;
+      font-size: 12px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      font-size: 18px;
+      color: #333;
+    }
+    .close-btn {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #f5f5f5;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-body { padding: 20px; }
+    .detail-row {
+      margin-bottom: 15px;
+    }
+    .detail-label {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .detail-value {
+      color: #333;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 14px;
+    }
+    .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .save-btn:hover { opacity: 0.9; }
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+  </style>
 </head>
 <body>
-    <nav class="navbar">
-        <h1>反馈管理后台</h1>
-        <a href="/" class="navbar-link">返回用户端</a>
-    </nav>
+  <div class="header">
+    <h1>反馈管理后台</h1>
+    <div class="stats" id="stats"></div>
+  </div>
 
-    <div class="container">
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="label">总反馈数</div>
-                <div class="value" id="statTotal">-</div>
-            </div>
-            <div class="stat-card bug">
-                <div class="label">Bug</div>
-                <div class="value" id="statBug">-</div>
-            </div>
-            <div class="stat-card suggestion">
-                <div class="label">建议</div>
-                <div class="value" id="statSuggestion">-</div>
-            </div>
-            <div class="stat-card inquiry">
-                <div class="label">咨询</div>
-                <div class="value" id="statInquiry">-</div>
-            </div>
-            <div class="stat-card pending">
-                <div class="label">待处理</div>
-                <div class="value" id="statPending">-</div>
-            </div>
-            <div class="stat-card processing">
-                <div class="label">处理中</div>
-                <div class="value" id="statProcessing">-</div>
-            </div>
-            <div class="stat-card completed">
-                <div class="label">已完成</div>
-                <div class="value" id="statCompleted">-</div>
-            </div>
-        </div>
-
-        <div class="filters">
-            <div class="filter-group">
-                <label>类型：</label>
-                <select id="filterType" onchange="loadFeedback()">
-                    <option value="all">全部</option>
-                    <option value="bug">Bug</option>
-                    <option value="suggestion">建议</option>
-                    <option value="inquiry">咨询</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>状态：</label>
-                <select id="filterStatus" onchange="loadFeedback()">
-                    <option value="all">全部</option>
-                    <option value="pending">待处理</option>
-                    <option value="processing">处理中</option>
-                    <option value="completed">已完成</option>
-                </select>
-            </div>
-            <button class="btn-refresh" onclick="refresh()">刷新</button>
-        </div>
-
-        <div class="feedback-list" id="feedbackList">
-            <div class="empty-state">
-                <div class="icon">📋</div>
-                <p>加载中...</p>
-            </div>
-        </div>
+  <div class="main">
+    <div class="filters">
+      <select id="typeFilter">
+        <option value="">全部类型</option>
+        <option value="Bug">Bug</option>
+        <option value="建议">建议</option>
+        <option value="咨询">咨询</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">全部状态</option>
+        <option value="待处理">待处理</option>
+        <option value="处理中">处理中</option>
+        <option value="已完成">已完成</option>
+      </select>
     </div>
+    <div class="feedback-list" id="feedbackList"></div>
+  </div>
 
-    <div class="toast" id="toast"></div>
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>反馈详情</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
 
-    <script>
-        const typeMap = { bug: 'Bug', suggestion: '建议', inquiry: '咨询' };
-        const statusMap = { pending: '待处理', processing: '处理中', completed: '已完成' };
-        let feedbackData = [];
-        let expandedId = null;
+  <script>
+    let feedbacks = [];
+    let currentId = null;
 
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
+    async function loadStats() {
+      const res = await fetch('/api/stats');
+      const stats = await res.json();
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="num">${stats.total}</div><div class="label">总数</div></div>
+        <div class="stat-card"><div class="num">${stats.pending}</div><div class="label">待处理</div></div>
+        <div class="stat-card"><div class="num">${stats.processing}</div><div class="label">处理中</div></div>
+        <div class="stat-card"><div class="num">${stats.completed}</div><div class="label">已完成</div></div>
+      `;
+    }
 
-                document.getElementById('statTotal').textContent = stats.total;
-                document.getElementById('statBug').textContent = stats.byType.bug;
-                document.getElementById('statSuggestion').textContent = stats.byType.suggestion;
-                document.getElementById('statInquiry').textContent = stats.byType.inquiry;
-                document.getElementById('statPending').textContent = stats.byStatus.pending;
-                document.getElementById('statProcessing').textContent = stats.byStatus.processing;
-                document.getElementById('statCompleted').textContent = stats.byStatus.completed;
-            } catch (error) {
-                console.error('加载统计失败:', error);
-            }
-        }
+    async function loadFeedbacks() {
+      const type = document.getElementById('typeFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const params = new URLSearchParams();
+      if (type) params.append('type', type);
+      if (status) params.append('status', status);
 
-        async function loadFeedback() {
-            const type = document.getElementById('filterType').value;
-            const status = document.getElementById('filterStatus').value;
+      const res = await fetch('/api/feedback?' + params);
+      feedbacks = await res.json();
+      renderList();
+    }
 
-            try {
-                const response = await fetch(`/api/feedback?type=${type}&status=${status}`);
-                feedbackData = await response.json();
-                renderFeedback();
-            } catch (error) {
-                console.error('加载反馈失败:', error);
-                document.getElementById('feedbackList').innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">😕</div>
-                        <p>加载失败，请重试</p>
-                    </div>
-                `;
-            }
-        }
+    function getTypeClass(type) {
+      const map = { 'Bug': 'tag-bug', '建议': 'tag-suggest', '咨询': 'tag-consult' };
+      return map[type] || '';
+    }
 
-        function renderFeedback() {
-            const listEl = document.getElementById('feedbackList');
+    function getStatusClass(status) {
+      const map = { '待处理': 'status-pending', '处理中': 'status-processing', '已完成': 'status-completed' };
+      return map[status] || '';
+    }
 
-            if (feedbackData.length === 0) {
-                listEl.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📭</div>
-                        <p>暂无反馈数据</p>
-                    </div>
-                `;
-                return;
-            }
+    function formatDate(str) {
+      return new Date(str).toLocaleString('zh-CN');
+    }
 
-            listEl.innerHTML = feedbackData.map(item => `
-                <div class="feedback-item" onclick="toggleDetail('${item.id}')">
-                    <div class="feedback-header">
-                        <div class="feedback-title">${escapeHtml(item.title)}</div>
-                        <div class="feedback-badges">
-                            <span class="badge badge-${item.type}">${typeMap[item.type]}</span>
-                            <span class="badge badge-${item.status}">${statusMap[item.status]}</span>
-                        </div>
-                    </div>
-                    <div class="feedback-meta">
-                        <span>ID: ${item.id.slice(0, 8)}</span>
-                        <span>${formatDate(item.createdAt)}</span>
-                        ${item.contact ? `<span>联系: ${escapeHtml(item.contact)}</span>` : ''}
-                    </div>
-                </div>
-                <div class="feedback-detail ${expandedId === item.id ? 'show' : ''}" id="detail-${item.id}">
-                    <div class="detail-section">
-                        <div class="detail-label">详细描述</div>
-                        <div class="detail-content">${escapeHtml(item.description)}</div>
-                    </div>
-                    <div class="detail-section">
-                        <div class="action-row">
-                            <div class="action-group">
-                                <label>状态</label>
-                                <select id="status-${item.id}">
-                                    <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>待处理</option>
-                                    <option value="processing" ${item.status === 'processing' ? 'selected' : ''}>处理中</option>
-                                    <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>已完成</option>
-                                </select>
-                            </div>
-                            <div class="action-group" style="flex: 1;">
-                                <label>处理备注</label>
-                                <input type="text" id="note-${item.id}" value="${escapeHtml(item.note)}" placeholder="添加处理备注...">
-                            </div>
-                            <button class="btn-save" onclick="event.stopPropagation(); updateFeedback('${item.id}')">保存</button>
-                            <button class="btn-delete" onclick="event.stopPropagation(); deleteFeedback('${item.id}')">删除</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+    function renderList() {
+      const list = document.getElementById('feedbackList');
+      if (feedbacks.length === 0) {
+        list.innerHTML = '<div class="empty">暂无反馈数据</div>';
+        return;
+      }
+      list.innerHTML = feedbacks.map(f => `
+        <div class="feedback-card" onclick="openModal('${f.id}')">
+          <div class="card-header">
+            <div class="card-title">${escapeHtml(f.title)}</div>
+            <div class="card-meta">
+              <span class="tag ${getTypeClass(f.type)}">${f.type}</span>
+              <span class="status ${getStatusClass(f.status)}">${f.status}</span>
+            </div>
+          </div>
+          <div class="card-desc">${escapeHtml(f.description)}</div>
+          <div class="card-footer">
+            <span>${formatDate(f.createdAt)}</span>
+            <span>${f.contact || '无联系方式'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
 
-        function toggleDetail(id) {
-            expandedId = expandedId === id ? null : id;
-            renderFeedback();
-        }
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
 
-        async function updateFeedback(id) {
-            const status = document.getElementById(`status-${id}`).value;
-            const note = document.getElementById(`note-${id}`).value;
+    function openModal(id) {
+      currentId = id;
+      const f = feedbacks.find(x => x.id === id);
+      if (!f) return;
 
-            try {
-                const response = await fetch(`/api/feedback/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status, note })
-                });
+      document.getElementById('modalBody').innerHTML = `
+        <div class="detail-row">
+          <div class="detail-label">类型</div>
+          <div class="detail-value"><span class="tag ${getTypeClass(f.type)}">${f.type}</span></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">标题</div>
+          <div class="detail-value">${escapeHtml(f.title)}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">详细描述</div>
+          <div class="detail-value">${escapeHtml(f.description)}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">联系方式</div>
+          <div class="detail-value">${f.contact || '未填写'}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">提交时间</div>
+          <div class="detail-value">${formatDate(f.createdAt)}</div>
+        </div>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+        <div class="form-group">
+          <label>状态</label>
+          <select id="editStatus">
+            <option value="待处理" ${f.status === '待处理' ? 'selected' : ''}>待处理</option>
+            <option value="处理中" ${f.status === '处理中' ? 'selected' : ''}>处理中</option>
+            <option value="已完成" ${f.status === '已完成' ? 'selected' : ''}>已完成</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>备注</label>
+          <textarea id="editNote" placeholder="添加处理备注...">${escapeHtml(f.note || '')}</textarea>
+        </div>
+        <button class="save-btn" onclick="saveChanges()">保存修改</button>
+      `;
 
-                if (!response.ok) throw new Error('更新失败');
+      document.getElementById('modal').classList.add('active');
+    }
 
-                showToast('保存成功', 'success');
-                refresh();
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      currentId = null;
+    }
 
-        async function deleteFeedback(id) {
-            if (!confirm('确定要删除这条反馈吗？')) return;
+    async function saveChanges() {
+      const status = document.getElementById('editStatus').value;
+      const note = document.getElementById('editNote').value;
 
-            try {
-                const response = await fetch(`/api/feedback/${id}`, {
-                    method: 'DELETE'
-                });
+      const res = await fetch(`/api/feedback/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, note })
+      });
 
-                if (!response.ok) throw new Error('删除失败');
+      if (res.ok) {
+        closeModal();
+        loadStats();
+        loadFeedbacks();
+      } else {
+        alert('保存失败');
+      }
+    }
 
-                showToast('删除成功', 'success');
-                expandedId = null;
-                refresh();
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        }
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
 
-        function refresh() {
-            loadStats();
-            loadFeedback();
-        }
+    document.getElementById('typeFilter').addEventListener('change', loadFeedbacks);
+    document.getElementById('statusFilter').addEventListener('change', loadFeedbacks);
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-        }
-
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast ' + type;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
-
-        // 初始化
-        refresh();
-    </script>
+    loadStats();
+    loadFeedbacks();
+  </script>
 </body>
 </html>
