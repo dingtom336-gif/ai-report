@@ -142,6 +142,154 @@
             color: rgba(255, 255, 255, 0.5);
             margin-top: 16px;
             padding: 10px;
+        }
+
+        /* 升级弹窗 */
+        .upgrade-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .upgrade-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .upgrade-modal {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .upgrade-modal-overlay.show .upgrade-modal {
+            transform: scale(1);
+        }
+
+        .upgrade-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .upgrade-close:hover {
+            color: #fff;
+        }
+
+        .upgrade-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upgrade-icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        .upgrade-modal h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upgrade-reason {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .upgrade-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .upgrade-features li {
+            padding: 10px 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upgrade-features .check {
+            color: #34c759;
+            font-weight: bold;
+        }
+
+        .upgrade-price {
+            margin-bottom: 20px;
+        }
+
+        .price-amount {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .price-period {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .upgrade-btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upgrade-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .upgrade-note {
+            margin-top: 12px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
             background: rgba(255, 255, 255, 0.03);
             border-radius: 8px;
         }
@@ -2249,6 +2397,35 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- 升级弹窗 -->
+    <div class="upgrade-modal-overlay" id="upgradeModal">
+        <div class="upgrade-modal">
+            <button class="upgrade-close" onclick="closeUpgradeModal()">&times;</button>
+            <div class="upgrade-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                    <path d="M2 17L12 22L22 17"/>
+                    <path d="M2 12L12 17L22 12"/>
+                </svg>
+            </div>
+            <h2>升级到 Pro</h2>
+            <p class="upgrade-reason" id="upgradeReason">解锁更多强大功能</p>
+            <ul class="upgrade-features">
+                <li><span class="check">✓</span> 无限次润色，不限每日次数</li>
+                <li><span class="check">✓</span> 解锁全部角色（开发、运营、产品）</li>
+                <li><span class="check">✓</span> AI 对话修改，精准调整周报</li>
+                <li><span class="check">✓</span> 范本学习，一键生成你的风格</li>
+                <li><span class="check">✓</span> 无限历史记录</li>
+            </ul>
+            <div class="upgrade-price">
+                <span class="price-amount">¥9.9</span>
+                <span class="price-period">/月</span>
+            </div>
+            <button class="upgrade-btn-primary" onclick="handleUpgrade()">立即升级</button>
+            <p class="upgrade-note">7天无理由退款</p>
+        </div>
+    </div>
+
     <!-- 反馈弹窗 -->
     <div class="modal-overlay" id="feedbackModal" onclick="closeFeedbackOnOverlay(event)">
         <div class="modal">
@@ -2325,6 +2502,41 @@
             userPermissions = null;
         }
 
+        // ========== 升级弹窗 ==========
+        function showUpgradeModal(reason) {
+            const modal = document.getElementById('upgradeModal');
+            const reasonEl = document.getElementById('upgradeReason');
+
+            const reasons = {
+                'role': '解锁开发工程师、运营等全部角色',
+                'chat': '使用 AI 对话精准修改周报',
+                'template': '使用范本学习生成你的风格',
+                'limit': '今日免费次数已用完，升级享无限润色',
+                'history': '查看全部周报历史记录',
+                'default': '解锁更多强大功能'
+            };
+
+            reasonEl.textContent = reasons[reason] || reasons['default'];
+            modal.classList.add('show');
+        }
+
+        function closeUpgradeModal() {
+            document.getElementById('upgradeModal').classList.remove('show');
+        }
+
+        function handleUpgrade() {
+            // 暂时提示联系升级
+            showToast('请联系管理员开通 Pro 版本', 'info');
+            closeUpgradeModal();
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('upgradeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUpgradeModal();
+            }
+        });
+
         function logout() {
             clearAuth();
             updateAuthUI();
@@ -2392,6 +2604,11 @@
 
         // ========== 身份选择 ==========
         function selectRole(el) {
+            // 检查是否锁定
+            if (el.classList.contains('locked')) {
+                showUpgradeModal('role');
+                return;
+            }
             document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
             el.classList.add('selected');
             selectedRole = el.dataset.role;
@@ -2499,7 +2716,18 @@
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || '润色失败');
+                if (!response.ok) {
+                    // 检查是否是限额错误
+                    if (data.code === 'DAILY_LIMIT_REACHED') {
+                        showUpgradeModal('limit');
+                        return;
+                    }
+                    if (data.code === 'ROLE_RESTRICTED') {
+                        showUpgradeModal('role');
+                        return;
+                    }
+                    throw new Error(data.error || '润色失败');
+                }
 
                 const output = document.getElementById('outputContent');
                 output.textContent = data.result;
@@ -2666,6 +2894,20 @@
         }
 
         function openAgentPanel() {
+            // 检查登录状态
+            const user = getUser();
+            if (!user) {
+                showToast('请先登录使用此功能', 'error');
+                setTimeout(() => window.location.href = '/login.html', 1000);
+                return;
+            }
+
+            // 检查 Pro 权限
+            if (user.plan !== 'pro' && user.role !== 'admin') {
+                showUpgradeModal('chat');
+                return;
+            }
+
             const output = document.getElementById('outputContent');
             if (output.classList.contains('empty')) {
                 showToast('请先生成润色结果', 'error');
@@ -2732,7 +2974,18 @@
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || '修改失败');
+                if (!response.ok) {
+                    if (data.code === 'FEATURE_RESTRICTED') {
+                        showUpgradeModal('chat');
+                        return;
+                    }
+                    if (response.status === 401) {
+                        showToast('请先登录', 'error');
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error(data.error || '修改失败');
+                }
 
                 // 移除思考状态
                 removeAgentThinking(thinkingId);
@@ -3090,5 +3343,19 @@
             showAgentEntry();
         }
     </script>
+
+    <!-- 版本号 -->
+    <div class="version-footer">v1.2.0 - 2024.02.01</div>
+    <style>
+        .version-footer {
+            position: fixed;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.25);
+            z-index: 1;
+        }
+    </style>
 </body>
 </html>
