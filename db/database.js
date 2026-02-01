@@ -313,10 +313,9 @@ export const VerificationCodes = {
     // 清理过期验证码
     codeQueries.cleanExpired.run();
 
-    // 模拟验证码，生产环境应随机生成
-    const code = process.env.NODE_ENV === 'production'
-      ? Math.random().toString().slice(2, 8)
-      : '123456';
+    // TODO: 接入短信服务后改为随机验证码
+    // 当前测试阶段固定为 123456
+    const code = '123456';
 
     // 5分钟有效期 (使用 SQLite 兼容的日期格式)
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
