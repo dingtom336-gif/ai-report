@@ -7,7 +7,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
 
 // 数据库和认证模块
-import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage, ReportRatings, CustomRoles } from './db/database.js';
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage, ReportRatings, CustomRoles, Prompts } from './db/database.js';
 import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
 import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
@@ -170,6 +170,12 @@ ${content}
   // 自定义角色 prompt
   if (customPrompt) {
     return customPrompt + '\n\n现在改写以下周报：\n' + content;
+  }
+
+  // 优先从数据库获取 prompt，如果没有则使用硬编码的默认值
+  const dbPrompt = Prompts.findByRoleType(role);
+  if (dbPrompt) {
+    return dbPrompt.content + '\n' + content;
   }
 
   const rolePrompt = ROLE_PROMPTS[role] || ROLE_PROMPTS.pm;
@@ -1207,6 +1213,67 @@ app.put('/api/admin/users/:id/plan', verifyToken, requireAdmin, (req, res) => {
   });
 
   res.json({ success: true, plan });
+});
+
+// ========== Prompt 管理 API ==========
+// 获取所有 Prompts
+app.get('/api/admin/prompts', verifyToken, requireAdmin, (req, res) => {
+  const prompts = Prompts.findAll();
+  res.json(prompts);
+});
+
+// 获取活跃 Prompts
+app.get('/api/admin/prompts/active', verifyToken, requireAdmin, (req, res) => {
+  const prompts = Prompts.findActive();
+  res.json(prompts);
+});
+
+// 更新 Prompt
+app.put('/api/admin/prompts/:id', verifyToken, requireAdmin, (req, res) => {
+  const { content } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'Prompt 内容不能为空' });
+  }
+
+  const prompt = Prompts.findById(req.params.id);
+  if (!prompt) {
+    return res.status(404).json({ error: 'Prompt 不存在' });
+  }
+
+  Prompts.update(req.params.id, content.trim());
+
+  UsageLogs.create({
+    user_id: req.user.id,
+    action: 'admin_update_prompt',
+    metadata: { promptId: req.params.id, roleType: prompt.role_type }
+  });
+
+  res.json({ success: true });
+});
+
+// 创建新版本 Prompt
+app.post('/api/admin/prompts', verifyToken, requireAdmin, (req, res) => {
+  const { roleType, content } = req.body;
+
+  if (!roleType || !content || !content.trim()) {
+    return res.status(400).json({ error: '角色类型和内容不能为空' });
+  }
+
+  const validRoles = ['pm', 'dev', 'ops'];
+  if (!validRoles.includes(roleType)) {
+    return res.status(400).json({ error: '无效的角色类型' });
+  }
+
+  const id = Prompts.createNewVersion(roleType, content.trim());
+
+  UsageLogs.create({
+    user_id: req.user.id,
+    action: 'admin_create_prompt',
+    metadata: { promptId: id, roleType }
+  });
+
+  res.json({ success: true, id });
 });
 
 app.listen(PORT, () => {

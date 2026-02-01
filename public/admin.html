@@ -561,6 +561,95 @@
       color: rgba(255,255,255,0.7);
     }
 
+    /* Prompt 管理 */
+    .prompts-grid {
+      display: grid;
+      gap: 20px;
+    }
+    .prompt-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .prompt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .prompt-header h3 {
+      font-size: 16px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .prompt-role-icon {
+      font-size: 20px;
+    }
+    .prompt-version {
+      font-size: 12px;
+      color: #999;
+      background: #f5f5f5;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .prompt-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+    .prompt-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .prompt-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn-save-prompt {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-save-prompt:hover {
+      transform: scale(1.02);
+    }
+    .btn-save-prompt:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-new-version {
+      padding: 10px 20px;
+      background: #f5f5f5;
+      color: #666;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-new-version:hover {
+      background: #e0e0e0;
+    }
+    .prompt-history {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #999;
+    }
+
     @media (max-width: 768px) {
       .charts-section {
         grid-template-columns: 1fr;
@@ -606,6 +695,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="overview">数据概览</button>
       <button class="tab" data-tab="users">用户管理</button>
+      <button class="tab" data-tab="prompts">Prompt管理</button>
       <button class="tab" data-tab="feedback">反馈管理</button>
     </div>
 
@@ -654,6 +744,13 @@
       </table>
     </div>
 
+    <!-- Prompt 管理 -->
+    <div class="content-section" id="prompts">
+      <div class="prompts-grid" id="promptsGrid">
+        <div class="empty">加载中...</div>
+      </div>
+    </div>
+
     <!-- 反馈管理 -->
     <div class="content-section" id="feedback">
       <div class="filters">
@@ -696,7 +793,7 @@
     </div>
   </div>
 
-  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(0,0,0,0.3);">v2.0.0</div>
+  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(0,0,0,0.3);">v2.2.0</div>
 
   <script>
     const TOKEN_KEY = 'ai_report_token';
@@ -785,6 +882,7 @@
 
         if (tab.dataset.tab === 'overview') loadOverview();
         if (tab.dataset.tab === 'users') loadUsers();
+        if (tab.dataset.tab === 'prompts') loadPrompts();
         if (tab.dataset.tab === 'feedback') loadFeedback();
       });
     });
@@ -1117,6 +1215,116 @@
         closeUserModal();
       } catch (err) {
         alert('更新失败: ' + err.message);
+      }
+    }
+
+    // ========== Prompt 管理 ==========
+    let promptsData = [];
+
+    async function loadPrompts() {
+      try {
+        const res = await fetch('/api/admin/prompts/active', {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        promptsData = await res.json();
+        renderPrompts();
+      } catch (err) {
+        console.error('加载 Prompts 失败:', err);
+      }
+    }
+
+    function renderPrompts() {
+      const grid = document.getElementById('promptsGrid');
+      const roleNames = { pm: '产品经理', dev: '开发工程师', ops: '运营' };
+      const roleIcons = { pm: '🎯', dev: '💻', ops: '📊' };
+
+      if (promptsData.length === 0) {
+        grid.innerHTML = '<div class="empty">暂无 Prompt 数据</div>';
+        return;
+      }
+
+      grid.innerHTML = promptsData.map(p => `
+        <div class="prompt-card">
+          <div class="prompt-header">
+            <h3>
+              <span class="prompt-role-icon">${roleIcons[p.role_type] || '📝'}</span>
+              ${roleNames[p.role_type] || p.role_type}
+            </h3>
+            <span class="prompt-version">版本 ${p.version}</span>
+          </div>
+          <textarea class="prompt-textarea" id="prompt-${p.id}" data-original="${escapeHtml(p.content)}">${escapeHtml(p.content)}</textarea>
+          <div class="prompt-actions">
+            <button class="btn-new-version" onclick="createNewPromptVersion('${p.role_type}', ${p.id})">保存为新版本</button>
+            <button class="btn-save-prompt" onclick="savePrompt(${p.id})">保存</button>
+          </div>
+          <div class="prompt-history">更新时间: ${p.updated_at ? formatDate(p.updated_at) : formatDate(p.created_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function savePrompt(id) {
+      const textarea = document.getElementById('prompt-' + id);
+      const content = textarea.value.trim();
+
+      if (!content) {
+        alert('Prompt 内容不能为空');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/prompts/' + id, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ content })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+
+        alert('保存成功');
+        loadPrompts();
+      } catch (err) {
+        alert('保存失败: ' + err.message);
+      }
+    }
+
+    async function createNewPromptVersion(roleType, currentId) {
+      const textarea = document.getElementById('prompt-' + currentId);
+      const content = textarea.value.trim();
+
+      if (!content) {
+        alert('Prompt 内容不能为空');
+        return;
+      }
+
+      if (!confirm('确定要保存为新版本？当前版本将被停用。')) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/prompts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ roleType, content })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+
+        alert('新版本创建成功');
+        loadPrompts();
+      } catch (err) {
+        alert('创建失败: ' + err.message);
       }
     }
 

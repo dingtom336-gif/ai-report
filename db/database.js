@@ -157,6 +157,133 @@ function initTables() {
     )
   `);
 
+  // Prompt 管理表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      role_type TEXT NOT NULL,
+      version INTEGER DEFAULT 1,
+      content TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT
+    )
+  `);
+
+  // 初始化默认 Prompts（如果为空）
+  const promptCount = db.prepare('SELECT COUNT(*) as count FROM prompts').get().count;
+  if (promptCount === 0) {
+    const defaultPrompts = [
+      {
+        role_type: 'pm',
+        content: `你是互联网大厂P9产品总监，带过50人团队，深谙向上汇报的艺术。
+
+【任务】将产品经理的周报改写成能让老板看到价值的高质量周报。
+
+【PM周报常见问题】
+- 只写了"做了什么"，没写"产出了什么"
+- 缺少数据支撑，成果不可衡量
+- 项目进度不清晰
+- 语言啰嗦，重点不突出
+
+【改写原则】
+1. 成果量化：完成率、影响用户数、预期收益
+2. 价值前置：先说结果，再说过程
+3. 风险透明：主动暴露问题
+4. 简洁有力：每条1-2行
+
+【输出格式】
+## 本周成果
+- [量化成果]
+
+## 重点进展
+- [项目]：当前阶段 → 下一里程碑（时间）
+
+## 下周计划
+- [可衡量目标]
+
+## 风险与协调（如有）
+- [问题]：需要[谁][做什么]
+
+现在改写：`
+      },
+      {
+        role_type: 'dev',
+        content: `你是互联网大厂技术总监，带过百人研发团队。
+
+【任务】将开发工程师的周报改写成技术领导认可的高质量周报。
+
+【开发周报常见问题】
+- 只写了"修了什么bug"，没写技术价值
+- 缺少代码量、性能提升等量化指标
+- 技术债务和风险没有暴露
+- 协作贡献被忽略
+
+【改写原则】
+1. 技术价值量化：代码行数、性能提升百分比、bug修复数
+2. 技术深度体现：用专业术语描述技术方案
+3. 协作贡献：code review、技术分享、帮助同事
+4. 风险前置：技术债务、性能瓶颈、依赖风险
+
+【输出格式】
+## 本周产出
+- [技术成果，含量化指标]
+
+## 技术进展
+- [项目/模块]：完成XX → 下一步XX
+
+## 下周计划
+- [具体技术任务]
+
+## 技术风险（如有）
+- [风险点]：影响范围 + 建议方案
+
+现在改写：`
+      },
+      {
+        role_type: 'ops',
+        content: `你是互联网大厂运营总监，操盘过亿级用户增长。
+
+【任务】将运营的周报改写成老板看得到增长价值的高质量周报。
+
+【运营周报常见问题】
+- 只写了"做了什么活动"，没写效果数据
+- 缺少ROI、转化率等核心指标
+- 用户增长归因不清晰
+- 竞品动态缺失
+
+【改写原则】
+1. 数据驱动：DAU/MAU、转化率、留存率、ROI
+2. 增长归因：哪个动作带来什么结果
+3. 成本意识：投入产出比、获客成本
+4. 市场敏感：竞品动态、行业趋势
+
+【输出格式】
+## 本周数据
+- 核心指标：[关键数据变化]
+
+## 运营动作
+- [活动/策略]：投入XX → 产出XX（ROI: XX）
+
+## 下周计划
+- [运营动作 + 预期目标]
+
+## 市场洞察（如有）
+- [竞品动态/行业趋势]
+
+现在改写：`
+      }
+    ];
+
+    const insertPrompt = db.prepare(`
+      INSERT INTO prompts (role_type, content) VALUES (@role_type, @content)
+    `);
+
+    for (const prompt of defaultPrompts) {
+      insertPrompt.run(prompt);
+    }
+  }
+
   console.log('数据库表初始化完成');
 
   // 自动创建管理员账号
@@ -1000,6 +1127,93 @@ export const AdminStats = {
       chatCount: chatCount.count,
       newUsers: newUsers.count
     };
+  }
+};
+
+// ========== Prompts CRUD ==========
+const promptQueries = {
+  findAll: db.prepare(`
+    SELECT * FROM prompts ORDER BY role_type, version DESC
+  `),
+
+  findActive: db.prepare(`
+    SELECT * FROM prompts WHERE is_active = 1
+  `),
+
+  findByRoleType: db.prepare(`
+    SELECT * FROM prompts WHERE role_type = ? AND is_active = 1 ORDER BY version DESC LIMIT 1
+  `),
+
+  findById: db.prepare(`
+    SELECT * FROM prompts WHERE id = ?
+  `),
+
+  create: db.prepare(`
+    INSERT INTO prompts (role_type, version, content, is_active)
+    VALUES (@role_type, @version, @content, @is_active)
+  `),
+
+  update: db.prepare(`
+    UPDATE prompts SET content = @content, updated_at = datetime('now')
+    WHERE id = @id
+  `),
+
+  deactivate: db.prepare(`
+    UPDATE prompts SET is_active = 0, updated_at = datetime('now')
+    WHERE role_type = ? AND is_active = 1
+  `),
+
+  getMaxVersion: db.prepare(`
+    SELECT MAX(version) as max_version FROM prompts WHERE role_type = ?
+  `)
+};
+
+export const Prompts = {
+  findAll() {
+    return promptQueries.findAll.all();
+  },
+
+  findActive() {
+    return promptQueries.findActive.all();
+  },
+
+  findByRoleType(roleType) {
+    return promptQueries.findByRoleType.get(roleType);
+  },
+
+  findById(id) {
+    return promptQueries.findById.get(id);
+  },
+
+  update(id, content) {
+    return promptQueries.update.run({ id, content });
+  },
+
+  createNewVersion(roleType, content) {
+    // 获取当前最大版本号
+    const maxVersion = promptQueries.getMaxVersion.get(roleType)?.max_version || 0;
+
+    // 停用当前活跃版本
+    promptQueries.deactivate.run(roleType);
+
+    // 创建新版本
+    const result = promptQueries.create.run({
+      role_type: roleType,
+      version: maxVersion + 1,
+      content,
+      is_active: 1
+    });
+
+    return result.lastInsertRowid;
+  },
+
+  getActivePrompts() {
+    const prompts = {};
+    const active = promptQueries.findActive.all();
+    for (const p of active) {
+      prompts[p.role_type] = p.content;
+    }
+    return prompts;
   }
 };
 
