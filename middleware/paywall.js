@@ -1,7 +1,8 @@
 /**
  * 付费墙规则
- * Free: 每日3次润色，仅PM角色，禁用AI对话、范本、完整历史
+ * Free: 每日3次润色，仅PM角色，禁用AI对话、范本
  * Pro: 无限制
+ * 游客: 每日3次润色（IP限制），仅PM角色
  */
 
 /**
@@ -75,13 +76,11 @@ export function checkTemplateAccess(req, res, next) {
 
 /**
  * 获取用户的历史记录限制
- * Free: 7 条
- * Pro: 无限
+ * 所有用户无限制
  */
 export function getHistoryLimit(user) {
   if (!user) return 0;
-  if (user.plan === 'pro' || user.role === 'admin') return null; // null = 无限制
-  return 7;
+  return null; // null = 无限制
 }
 
 /**
@@ -105,7 +104,7 @@ export function getUserPermissions(user) {
     polish: true,
     aiChat: isPro,
     template: isPro,
-    historyLimit: isPro ? null : 7,
+    historyLimit: null, // 所有用户历史记录无限制
     dailyLimit: isPro ? null : 3,
     allowedRoles: isPro ? ['dev', 'ops', 'pm'] : ['pm']
   };

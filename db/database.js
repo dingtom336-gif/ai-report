@@ -118,6 +118,18 @@ function initTables() {
     )
   `);
 
+  // 游客使用记录表（按 IP 追踪）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS guest_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ip TEXT NOT NULL,
+      usage_count INTEGER DEFAULT 0,
+      usage_date TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(ip, usage_date)
+    )
+  `);
+
   console.log('数据库表初始化完成');
 
   // 自动创建管理员账号
@@ -577,6 +589,70 @@ export const UsageLogs = {
     const byAction = usageLogQueries.countByAction.all();
     const total = usageLogQueries.countTotal.get().count;
     return { byAction, total };
+  }
+};
+
+// ========== GuestUsage CRUD ==========
+const guestUsageQueries = {
+  findByIpAndDate: db.prepare(`
+    SELECT * FROM guest_usage WHERE ip = ? AND usage_date = ?
+  `),
+
+  create: db.prepare(`
+    INSERT INTO guest_usage (ip, usage_count, usage_date)
+    VALUES (@ip, @usage_count, @usage_date)
+  `),
+
+  increment: db.prepare(`
+    UPDATE guest_usage SET usage_count = usage_count + 1 WHERE ip = ? AND usage_date = ?
+  `),
+
+  cleanOld: db.prepare(`
+    DELETE FROM guest_usage WHERE usage_date < date('now', '-7 days')
+  `)
+};
+
+export const GuestUsage = {
+  // 检查并增加游客使用次数
+  checkAndIncrement(ip, limit = 3) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // 清理7天前的记录
+    guestUsageQueries.cleanOld.run();
+
+    // 查找今日记录
+    let record = guestUsageQueries.findByIpAndDate.get(ip, today);
+
+    if (!record) {
+      // 首次使用，创建记录
+      guestUsageQueries.create.run({
+        ip,
+        usage_count: 1,
+        usage_date: today
+      });
+      return { allowed: true, remaining: limit - 1, used: 1, limit };
+    }
+
+    // 检查是否超限
+    if (record.usage_count >= limit) {
+      return { allowed: false, remaining: 0, used: record.usage_count, limit };
+    }
+
+    // 增加使用次数
+    guestUsageQueries.increment.run(ip, today);
+    return {
+      allowed: true,
+      remaining: limit - record.usage_count - 1,
+      used: record.usage_count + 1,
+      limit
+    };
+  },
+
+  // 获取游客今日使用情况
+  getUsage(ip) {
+    const today = new Date().toISOString().split('T')[0];
+    const record = guestUsageQueries.findByIpAndDate.get(ip, today);
+    return record ? record.usage_count : 0;
   }
 };
 

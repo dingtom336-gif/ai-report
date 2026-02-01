@@ -7,7 +7,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
 
 // 数据库和认证模块
-import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes } from './db/database.js';
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage } from './db/database.js';
 import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
 import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
@@ -28,6 +28,15 @@ app.use(express.static(join(__dirname, 'public')));
 app.get('/', (req, res) => {
   res.redirect('/landing.html');
 });
+
+// 获取客户端真实 IP（支持代理）
+function getClientIp(req) {
+  return req.headers['x-real-ip'] ||
+         req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+         req.ip ||
+         req.connection?.remoteAddress ||
+         'unknown';
+}
 
 // 代理配置
 const proxyUrl = process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
@@ -424,8 +433,11 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
     return res.status(500).json({ error: 'API Key 未配置' });
   }
 
-  // 登录用户检查用量
+  // 用量检查
+  let usageInfo = null;
+
   if (req.user) {
+    // 登录用户检查用量
     const usageResult = Users.checkAndIncrementUsage(req.user);
     if (!usageResult.allowed) {
       return res.status(429).json({
@@ -434,6 +446,26 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
         limit: usageResult.limit
       });
     }
+    usageInfo = {
+      remaining: req.user.plan === 'pro' ? null : usageResult.remaining,
+      limit: req.user.plan === 'pro' ? null : usageResult.limit
+    };
+  } else {
+    // 游客检查 IP 用量限制（3 次/天）
+    const clientIp = getClientIp(req);
+    const guestResult = GuestUsage.checkAndIncrement(clientIp, 3);
+    if (!guestResult.allowed) {
+      return res.status(429).json({
+        error: '游客试用次数已用完，请登录后继续使用',
+        code: 'GUEST_LIMIT_REACHED',
+        limit: guestResult.limit
+      });
+    }
+    usageInfo = {
+      remaining: guestResult.remaining,
+      limit: guestResult.limit,
+      isGuest: true
+    };
   }
 
   const validRoles = ['dev', 'ops', 'pm'];
@@ -464,10 +496,7 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
     res.json({
       result,
       reportId,
-      usageInfo: req.user ? {
-        remaining: req.user.plan === 'pro' ? null : (3 - req.user.daily_usage - 1),
-        limit: req.user.plan === 'pro' ? null : 3
-      } : null
+      usageInfo
     });
   } catch (error) {
     console.error('API 调用失败:', error.status, error.data || error.message);
@@ -646,7 +675,7 @@ app.post('/api/feedback', optionalToken, (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/feedback', (req, res) => {
+app.get('/api/feedback', verifyToken, requireAdmin, (req, res) => {
   const { type, status } = req.query;
   const data = Feedback.findAll({ type, status });
   res.json(data);
@@ -663,7 +692,7 @@ app.put('/api/feedback/:id', verifyToken, requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', verifyToken, requireAdmin, (req, res) => {
   res.json(Feedback.getStats());
 });
 
@@ -689,35 +718,6 @@ app.get('/api/admin/trends', verifyToken, requireAdmin, (req, res) => {
   const usersByPlan = AdminStats.getUsersByPlan();
 
   res.json({ trends, usersByPlan });
-});
-
-// ========== 日志查看 API ==========
-app.get('/api/admin/logs', verifyToken, requireAdmin, (req, res) => {
-  const { action, limit = 100, offset = 0 } = req.query;
-  const limitNum = Math.min(parseInt(limit) || 100, 500);
-  const offsetNum = parseInt(offset) || 0;
-
-  let logs;
-  if (action && action !== 'all') {
-    logs = UsageLogs.findByAction(action, limitNum);
-  } else {
-    logs = UsageLogs.findAll(limitNum, offsetNum);
-  }
-
-  // 解析 metadata JSON
-  const parsedLogs = logs.map(log => ({
-    ...log,
-    metadata: JSON.parse(log.metadata || '{}')
-  }));
-
-  res.json({
-    logs: parsedLogs,
-    total: UsageLogs.countTotal()
-  });
-});
-
-app.get('/api/admin/logs/stats', verifyToken, requireAdmin, (req, res) => {
-  res.json(UsageLogs.getStats());
 });
 
 app.listen(PORT, () => {
