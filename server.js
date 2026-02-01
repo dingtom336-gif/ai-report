@@ -7,7 +7,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
 
 // 数据库和认证模块
-import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats } from './db/database.js';
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes } from './db/database.js';
 import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
 import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
@@ -269,86 +269,118 @@ function parseReActResponse(response) {
 
 // ========== 认证 API ==========
 
-// 注册
-app.post('/api/auth/register', async (req, res) => {
-  const { email, password, nickname } = req.body;
+// 发送验证码
+app.post('/api/auth/send-code', async (req, res) => {
+  const { phone } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: '邮箱和密码不能为空' });
+  if (!phone) {
+    return res.status(400).json({ error: '请输入手机号' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ error: '密码至少6位' });
-  }
-
-  // 检查邮箱是否已存在
-  const existing = Users.findByEmail(email);
-  if (existing) {
-    return res.status(400).json({ error: '该邮箱已注册' });
+  // 验证手机号格式
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    return res.status(400).json({ error: '手机号格式不正确' });
   }
 
   try {
-    const passwordHash = hashPassword(password);
-    const userId = Users.create({
-      email,
-      password_hash: passwordHash,
-      nickname: nickname || email.split('@')[0]
+    const code = VerificationCodes.generate(phone);
+
+    // TODO: 接入真实短信服务发送验证码
+    // 模拟模式下，验证码固定为 123456
+    console.log(`[验证码] ${phone}: ${code}`);
+
+    UsageLogs.create({ action: 'send_code', metadata: { phone: phone.slice(0, 3) + '****' + phone.slice(-4) } });
+
+    res.json({
+      success: true,
+      message: '验证码已发送',
+      // 开发模式返回验证码，生产环境移除
+      ...(process.env.NODE_ENV !== 'production' && { code })
     });
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    res.status(500).json({ error: '发送失败，请稍后重试' });
+  }
+});
 
-    const user = Users.findById(userId);
-    Users.updateLastLogin(userId);
+// 手机号验证码登录（自动注册）
+app.post('/api/auth/login', async (req, res) => {
+  const { phone, code, email, password } = req.body;
 
-    // 记录注册日志
-    UsageLogs.create({ user_id: userId, action: 'register' });
+  // 管理员邮箱密码登录
+  if (email && password) {
+    const user = Users.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: '邮箱或密码错误' });
+    }
+
+    if (!verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ error: '邮箱或密码错误' });
+    }
+
+    Users.updateLastLogin(user.id);
+    UsageLogs.create({ user_id: user.id, action: 'login' });
 
     const token = generateToken(user);
-    res.json({
+    return res.json({
       token,
       user: {
         id: user.id,
+        phone: user.phone,
         email: user.email,
         nickname: user.nickname,
         role: user.role,
         plan: user.plan
       }
     });
-  } catch (error) {
-    console.error('注册失败:', error);
-    res.status(500).json({ error: '注册失败，请稍后重试' });
-  }
-});
-
-// 登录
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: '邮箱和密码不能为空' });
   }
 
-  const user = Users.findByEmail(email);
-  if (!user) {
-    return res.status(401).json({ error: '邮箱或密码错误' });
+  // 手机号验证码登录
+  if (!phone || !code) {
+    return res.status(400).json({ error: '请输入手机号和验证码' });
   }
 
-  if (!verifyPassword(password, user.password_hash)) {
-    return res.status(401).json({ error: '邮箱或密码错误' });
+  // 验证验证码
+  const isValid = VerificationCodes.verify(phone, code);
+  if (!isValid) {
+    return res.status(401).json({ error: '验证码错误或已过期' });
   }
 
-  Users.updateLastLogin(user.id);
-  UsageLogs.create({ user_id: user.id, action: 'login' });
+  try {
+    // 查找或创建用户
+    let user = Users.findByPhone(phone);
+    let isNewUser = false;
 
-  const token = generateToken(user);
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-      role: user.role,
-      plan: user.plan
+    if (!user) {
+      // 自动注册
+      const userId = Users.createByPhone({
+        phone,
+        nickname: '用户' + phone.slice(-4)
+      });
+      user = Users.findById(userId);
+      isNewUser = true;
+      UsageLogs.create({ user_id: userId, action: 'register' });
     }
-  });
+
+    Users.updateLastLogin(user.id);
+    UsageLogs.create({ user_id: user.id, action: 'login' });
+
+    const token = generateToken(user);
+    res.json({
+      token,
+      isNewUser,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        nickname: user.nickname,
+        role: user.role,
+        plan: user.plan
+      }
+    });
+  } catch (error) {
+    console.error('登录失败:', error);
+    res.status(500).json({ error: '登录失败，请稍后重试' });
+  }
 });
 
 // 获取当前用户信息
@@ -357,6 +389,7 @@ app.get('/api/auth/me', verifyToken, (req, res) => {
   res.json({
     user: {
       id: req.user.id,
+      phone: req.user.phone,
       email: req.user.email,
       nickname: req.user.nickname,
       role: req.user.role,

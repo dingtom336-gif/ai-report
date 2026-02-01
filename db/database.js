@@ -24,12 +24,13 @@ db.pragma('journal_mode = WAL');
 
 // ========== 初始化表结构 (立即执行) ==========
 function initTables() {
-  // 用户表
+  // 用户表 (支持手机号登录)
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      phone TEXT UNIQUE,
+      email TEXT UNIQUE,
+      password_hash TEXT,
       nickname TEXT,
       role TEXT DEFAULT 'user',
       plan TEXT DEFAULT 'free',
@@ -37,6 +38,18 @@ function initTables() {
       last_usage_date TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       last_login TEXT
+    )
+  `);
+
+  // 验证码表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS verification_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
     )
   `);
 
@@ -112,9 +125,18 @@ initTables();
 
 // ========== Users CRUD ==========
 const userQueries = {
-  create: db.prepare(`
+  createByPhone: db.prepare(`
+    INSERT INTO users (phone, nickname, role, plan)
+    VALUES (@phone, @nickname, @role, @plan)
+  `),
+
+  createByEmail: db.prepare(`
     INSERT INTO users (email, password_hash, nickname, role, plan)
     VALUES (@email, @password_hash, @nickname, @role, @plan)
+  `),
+
+  findByPhone: db.prepare(`
+    SELECT * FROM users WHERE phone = ?
   `),
 
   findByEmail: db.prepare(`
@@ -142,7 +164,7 @@ const userQueries = {
   `),
 
   listAll: db.prepare(`
-    SELECT id, email, nickname, role, plan, daily_usage, created_at, last_login
+    SELECT id, phone, email, nickname, role, plan, daily_usage, created_at, last_login
     FROM users ORDER BY created_at DESC
   `),
 
@@ -152,8 +174,24 @@ const userQueries = {
 };
 
 export const Users = {
-  create(data) {
-    const result = userQueries.create.run({
+  // 手机号注册/登录
+  createByPhone(data) {
+    const result = userQueries.createByPhone.run({
+      phone: data.phone,
+      nickname: data.nickname || null,
+      role: data.role || 'user',
+      plan: data.plan || 'free'
+    });
+    return result.lastInsertRowid;
+  },
+
+  findByPhone(phone) {
+    return userQueries.findByPhone.get(phone);
+  },
+
+  // 兼容邮箱注册（管理员）
+  createByEmail(data) {
+    const result = userQueries.createByEmail.run({
       email: data.email,
       password_hash: data.password_hash,
       nickname: data.nickname || null,
@@ -220,6 +258,62 @@ export const Users = {
 
   count() {
     return userQueries.count.get().count;
+  }
+};
+
+// ========== VerificationCodes CRUD ==========
+const codeQueries = {
+  create: db.prepare(`
+    INSERT INTO verification_codes (phone, code, expires_at)
+    VALUES (@phone, @code, @expires_at)
+  `),
+
+  findValid: db.prepare(`
+    SELECT * FROM verification_codes
+    WHERE phone = @phone AND code = @code AND used = 0 AND expires_at > datetime('now')
+    ORDER BY created_at DESC LIMIT 1
+  `),
+
+  markUsed: db.prepare(`
+    UPDATE verification_codes SET used = 1 WHERE id = ?
+  `),
+
+  cleanExpired: db.prepare(`
+    DELETE FROM verification_codes WHERE expires_at < datetime('now')
+  `)
+};
+
+export const VerificationCodes = {
+  // 生成验证码（模拟：固定返回 123456）
+  generate(phone) {
+    // 清理过期验证码
+    codeQueries.cleanExpired.run();
+
+    // 模拟验证码，生产环境应随机生成
+    const code = process.env.NODE_ENV === 'production'
+      ? Math.random().toString().slice(2, 8)
+      : '123456';
+
+    // 5分钟有效期
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    codeQueries.create.run({
+      phone,
+      code,
+      expires_at: expiresAt
+    });
+
+    return code;
+  },
+
+  // 验证验证码
+  verify(phone, code) {
+    const record = codeQueries.findValid.get({ phone, code });
+    if (record) {
+      codeQueries.markUsed.run(record.id);
+      return true;
+    }
+    return false;
   }
 };
 

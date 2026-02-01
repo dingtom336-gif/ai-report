@@ -2571,7 +2571,7 @@
                 navUser.style.display = 'flex';
                 navLogin.style.display = 'none';
                 navHistory.style.display = 'block';
-                userName.textContent = user.nickname || user.email;
+                userName.textContent = user.nickname || user.phone || user.email;
                 userPlan.textContent = user.plan === 'pro' ? 'PRO' : 'FREE';
                 userPlan.className = 'user-plan ' + user.plan;
 
@@ -3358,7 +3358,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.3.0 - 2024.02.01</div>
+    <div class="version-footer">v1.4.0 - 2024.02.01</div>
     <style>
         .version-footer {
             position: fixed;
