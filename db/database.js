@@ -294,8 +294,11 @@ export const VerificationCodes = {
       ? Math.random().toString().slice(2, 8)
       : '123456';
 
-    // 5分钟有效期
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    // 5分钟有效期 (使用 SQLite 兼容的日期格式)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .slice(0, 19);
 
     codeQueries.create.run({
       phone,
