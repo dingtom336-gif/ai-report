@@ -7,7 +7,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
 
 // 数据库和认证模块
-import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage, ReportRatings } from './db/database.js';
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage, ReportRatings, CustomRoles } from './db/database.js';
 import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
 import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
@@ -140,7 +140,7 @@ const ROLE_PROMPTS = {
 };
 
 // 构建 Prompt
-function buildPrompt(content, role, template, useTemplate) {
+function buildPrompt(content, role, template, useTemplate, customPrompt = null) {
   if (useTemplate && template) {
     return `你是互联网大厂资深总监。
 
@@ -165,6 +165,11 @@ ${content}
 """
 
 请输出改写后的周报：`;
+  }
+
+  // 自定义角色 prompt
+  if (customPrompt) {
+    return customPrompt + '\n\n现在改写以下周报：\n' + content;
   }
 
   const rolePrompt = ROLE_PROMPTS[role] || ROLE_PROMPTS.pm;
@@ -571,10 +576,23 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
   }
 
   const validRoles = ['dev', 'ops', 'pm'];
-  const finalRole = validRoles.includes(role) ? role : 'pm';
+  let finalRole = validRoles.includes(role) ? role : 'pm';
+  let customPrompt = null;
+
+  // 检查是否使用自定义角色
+  if (role && role.startsWith('custom_')) {
+    const customRoleId = parseInt(role.split('_')[1], 10);
+    if (!isNaN(customRoleId)) {
+      const customRole = CustomRoles.findById(customRoleId);
+      if (customRole && req.user && customRole.user_id === req.user.id) {
+        customPrompt = customRole.prompt;
+        finalRole = 'custom';
+      }
+    }
+  }
 
   try {
-    const prompt = buildPrompt(content, finalRole, template, useTemplate);
+    const prompt = buildPrompt(content, finalRole, template, useTemplate, customPrompt);
     const data = await callDeepSeekAPI(prompt);
     const result = data.choices[0].message.content;
 
@@ -660,8 +678,22 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
   }
 
   const validRoles = ['dev', 'ops', 'pm'];
-  const finalRole = validRoles.includes(role) ? role : 'pm';
-  const prompt = buildPrompt(content, finalRole, template, useTemplate);
+  let finalRole = validRoles.includes(role) ? role : 'pm';
+  let customPrompt = null;
+
+  // 检查是否使用自定义角色
+  if (role && role.startsWith('custom_')) {
+    const customRoleId = parseInt(role.split('_')[1], 10);
+    if (!isNaN(customRoleId)) {
+      const customRole = CustomRoles.findById(customRoleId);
+      if (customRole && req.user && customRole.user_id === req.user.id) {
+        customPrompt = customRole.prompt;
+        finalRole = 'custom';
+      }
+    }
+  }
+
+  const prompt = buildPrompt(content, finalRole, template, useTemplate, customPrompt);
 
   // 设置 SSE 响应头
   res.setHeader('Content-Type', 'text/event-stream');
@@ -930,6 +962,102 @@ app.put('/api/templates/:id', verifyToken, checkTemplateAccess, (req, res) => {
 
 app.delete('/api/templates/:id', verifyToken, (req, res) => {
   Templates.delete(req.params.id, req.user.id);
+  res.json({ success: true });
+});
+
+// ========== 自定义角色 API (Pro) ==========
+const MAX_CUSTOM_ROLES = 5;
+
+app.get('/api/roles', verifyToken, (req, res) => {
+  const roles = CustomRoles.findByUserId(req.user.id);
+  res.json(roles);
+});
+
+app.post('/api/roles', verifyToken, checkTemplateAccess, async (req, res) => {
+  const { name, description, icon } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: '请输入角色名称' });
+  }
+
+  // 检查数量限制
+  const count = CustomRoles.countByUserId(req.user.id);
+  if (count >= MAX_CUSTOM_ROLES) {
+    return res.status(400).json({
+      error: `最多创建 ${MAX_CUSTOM_ROLES} 个自定义角色`,
+      code: 'ROLE_LIMIT_REACHED'
+    });
+  }
+
+  try {
+    // 使用 DeepSeek 生成 prompt
+    const promptGenRequest = `你是一个 prompt 工程专家。用户想创建一个周报润色角色。
+
+角色名称：${name}
+角色描述：${description || '无'}
+
+请为这个角色生成一个专业的 prompt，用于指导 AI 如何润色周报。
+要求：
+1. 理解该角色的工作特点和汇报风格
+2. 包含具体的改写原则（3-5条）
+3. 包含输出格式示例
+4. 语言简洁专业
+
+直接输出 prompt 内容，不要有其他说明。`;
+
+    const data = await callDeepSeekAPI(promptGenRequest);
+    const generatedPrompt = data.choices[0].message.content;
+
+    const id = CustomRoles.create({
+      user_id: req.user.id,
+      name: name.trim(),
+      description: description?.trim() || '',
+      prompt: generatedPrompt,
+      icon: icon || '🎯'
+    });
+
+    res.json({
+      success: true,
+      id,
+      prompt: generatedPrompt
+    });
+  } catch (error) {
+    console.error('创建自定义角色失败:', error);
+    res.status(500).json({ error: '创建失败，请稍后重试' });
+  }
+});
+
+app.get('/api/roles/:id', verifyToken, (req, res) => {
+  const role = CustomRoles.findById(req.params.id);
+  if (!role || role.user_id !== req.user.id) {
+    return res.status(404).json({ error: '角色不存在' });
+  }
+  res.json(role);
+});
+
+app.put('/api/roles/:id', verifyToken, checkTemplateAccess, (req, res) => {
+  const { name, description, prompt, icon } = req.body;
+
+  const role = CustomRoles.findById(req.params.id);
+  if (!role || role.user_id !== req.user.id) {
+    return res.status(404).json({ error: '角色不存在' });
+  }
+
+  CustomRoles.update(req.params.id, req.user.id, {
+    name: name || role.name,
+    description: description !== undefined ? description : role.description,
+    prompt: prompt || role.prompt,
+    icon: icon || role.icon
+  });
+
+  res.json({ success: true });
+});
+
+app.delete('/api/roles/:id', verifyToken, (req, res) => {
+  const result = CustomRoles.delete(req.params.id, req.user.id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: '角色不存在' });
+  }
   res.json({ success: true });
 });
 

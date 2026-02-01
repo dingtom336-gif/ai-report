@@ -1,5 +1,11 @@
 # AI Report 项目
 
+## Claude 工作模式（重要）
+
+- **默认使用 Plan Mode**：每次开始新对话时，自动进入计划模式
+- 先分析需求、制定实施计划，等用户确认后再执行
+- 用户会手动输入命令切换到正常模式
+
 ## 项目信息
 - **项目名称**：ai-report（AI周报润色工具）
 - **本地开发路径**：/Users/xiaozhang/Desktop/claude-test/feedback-system

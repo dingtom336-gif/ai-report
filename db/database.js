@@ -143,6 +143,20 @@ function initTables() {
     )
   `);
 
+  // 自定义角色表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS custom_roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      prompt TEXT NOT NULL,
+      icon TEXT DEFAULT '🎯',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT
+    )
+  `);
+
   console.log('数据库表初始化完成');
 
   // 自动创建管理员账号
@@ -727,6 +741,76 @@ export const ReportRatings = {
       totalRatings: avg.count,
       distribution
     };
+  }
+};
+
+// ========== CustomRoles CRUD ==========
+const customRoleQueries = {
+  create: db.prepare(`
+    INSERT INTO custom_roles (user_id, name, description, prompt, icon)
+    VALUES (@user_id, @name, @description, @prompt, @icon)
+  `),
+
+  findById: db.prepare(`
+    SELECT * FROM custom_roles WHERE id = ?
+  `),
+
+  findByUserId: db.prepare(`
+    SELECT * FROM custom_roles WHERE user_id = ? ORDER BY created_at DESC
+  `),
+
+  countByUserId: db.prepare(`
+    SELECT COUNT(*) as count FROM custom_roles WHERE user_id = ?
+  `),
+
+  update: db.prepare(`
+    UPDATE custom_roles
+    SET name = @name, description = @description, prompt = @prompt, icon = @icon, updated_at = datetime('now')
+    WHERE id = @id AND user_id = @user_id
+  `),
+
+  delete: db.prepare(`
+    DELETE FROM custom_roles WHERE id = ? AND user_id = ?
+  `)
+};
+
+export const CustomRoles = {
+  create(data) {
+    const result = customRoleQueries.create.run({
+      user_id: data.user_id,
+      name: data.name,
+      description: data.description || '',
+      prompt: data.prompt,
+      icon: data.icon || '🎯'
+    });
+    return result.lastInsertRowid;
+  },
+
+  findById(id) {
+    return customRoleQueries.findById.get(id);
+  },
+
+  findByUserId(userId) {
+    return customRoleQueries.findByUserId.all(userId);
+  },
+
+  countByUserId(userId) {
+    return customRoleQueries.countByUserId.get(userId).count;
+  },
+
+  update(id, userId, data) {
+    return customRoleQueries.update.run({
+      id,
+      user_id: userId,
+      name: data.name,
+      description: data.description || '',
+      prompt: data.prompt,
+      icon: data.icon || '🎯'
+    });
+  },
+
+  delete(id, userId) {
+    return customRoleQueries.delete.run(id, userId);
   }
 };
 

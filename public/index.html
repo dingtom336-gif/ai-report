@@ -387,6 +387,253 @@
             color: #fff;
         }
 
+        /* 自定义角色区域 */
+        .custom-roles-section {
+            margin-top: 16px;
+            display: none;
+        }
+        .custom-roles-section.show {
+            display: block;
+        }
+        .custom-roles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .custom-roles-title {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .btn-add-role {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .btn-add-role:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .custom-roles-list {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .custom-role-card {
+            position: relative;
+            min-width: 120px;
+            max-width: 160px;
+            padding: 16px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .custom-role-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .custom-role-card.selected {
+            border: 2px solid transparent;
+            background: linear-gradient(#1a1a2e, #1a1a2e) padding-box,
+                        linear-gradient(135deg, #667eea, #764ba2) border-box;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+        .custom-role-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+        .custom-role-name {
+            font-size: 13px;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .custom-role-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 100, 100, 0.8);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .custom-role-card:hover .custom-role-delete {
+            opacity: 1;
+        }
+        .custom-roles-empty {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+        }
+
+        /* 创建角色模态框 */
+        .role-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .role-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .role-modal {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .role-modal-overlay.show .role-modal {
+            transform: scale(1);
+        }
+        .role-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .role-modal-header h3 {
+            color: #fff;
+            font-size: 18px;
+            margin: 0;
+        }
+        .role-modal-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .role-modal-close:hover {
+            color: #fff;
+        }
+        .role-form-group {
+            margin-bottom: 16px;
+        }
+        .role-form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .role-form-group input,
+        .role-form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .role-form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .role-form-group input:focus,
+        .role-form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .role-form-hint {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+        }
+        .icon-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .icon-option {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        .icon-option:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .icon-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .role-modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .role-modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-role-cancel {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .btn-role-cancel:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .btn-role-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: #fff;
+        }
+        .btn-role-create:hover {
+            transform: scale(1.02);
+        }
+        .btn-role-create:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* 主体两栏 */
         .main-content {
             display: flex;
@@ -2427,6 +2674,21 @@
                     <div class="role-name">产品经理</div>
                 </div>
             </div>
+
+            <!-- 自定义角色区域 (Pro用户可见) -->
+            <div class="custom-roles-section" id="customRolesSection">
+                <div class="custom-roles-header">
+                    <span class="custom-roles-title">我的自定义角色</span>
+                    <button class="btn-add-role" onclick="showCreateRoleModal()">
+                        <span>+</span> 新建角色
+                    </button>
+                </div>
+                <div class="custom-roles-list" id="customRolesList">
+                    <div class="custom-roles-empty" id="customRolesEmpty">
+                        还没有自定义角色，点击「新建角色」创建一个
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 主体两栏 -->
@@ -2771,6 +3033,7 @@
             <ul class="upgrade-features">
                 <li><span class="check">✓</span> 无限次润色，不限每日次数</li>
                 <li><span class="check">✓</span> 解锁全部角色（开发、运营、产品）</li>
+                <li><span class="check">✓</span> 自定义专属角色，AI 生成润色策略</li>
                 <li><span class="check">✓</span> AI 对话修改，精准调整周报</li>
                 <li><span class="check">✓</span> 范本学习，一键生成你的风格</li>
                 <li><span class="check">✓</span> 无限历史记录</li>
@@ -2781,6 +3044,46 @@
             </div>
             <button class="upgrade-btn-primary" onclick="handleUpgrade()">立即升级</button>
             <p class="upgrade-note">7天无理由退款</p>
+        </div>
+    </div>
+
+    <!-- 创建自定义角色弹窗 -->
+    <div class="role-modal-overlay" id="createRoleModal" onclick="closeRoleModalOnOverlay(event)">
+        <div class="role-modal">
+            <div class="role-modal-header">
+                <h3>创建自定义角色</h3>
+                <button class="role-modal-close" onclick="closeCreateRoleModal()">&times;</button>
+            </div>
+            <form id="createRoleForm" onsubmit="handleCreateRole(event)">
+                <div class="role-form-group">
+                    <label>角色名称 *</label>
+                    <input type="text" id="roleNameInput" placeholder="例如：技术总监" maxlength="20" required>
+                </div>
+                <div class="role-form-group">
+                    <label>角色描述</label>
+                    <input type="text" id="roleDescInput" placeholder="简短描述这个角色的特点" maxlength="100">
+                    <div class="role-form-hint">描述会帮助 AI 更好地理解角色定位</div>
+                </div>
+                <div class="role-form-group">
+                    <label>选择图标</label>
+                    <div class="icon-picker" id="iconPicker">
+                        <div class="icon-option selected" data-icon="🎯">🎯</div>
+                        <div class="icon-option" data-icon="👨‍💼">👨‍💼</div>
+                        <div class="icon-option" data-icon="👩‍💻">👩‍💻</div>
+                        <div class="icon-option" data-icon="📈">📈</div>
+                        <div class="icon-option" data-icon="🚀">🚀</div>
+                        <div class="icon-option" data-icon="💡">💡</div>
+                        <div class="icon-option" data-icon="🎨">🎨</div>
+                        <div class="icon-option" data-icon="📝">📝</div>
+                    </div>
+                </div>
+                <div class="role-modal-actions">
+                    <button type="button" class="btn-role-cancel" onclick="closeCreateRoleModal()">取消</button>
+                    <button type="submit" class="btn-role-create" id="createRoleBtn">
+                        <span id="createRoleBtnText">创建角色</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2927,11 +3230,22 @@
                             card.classList.add('locked');
                         }
                     });
+                } else {
+                    // Pro 用户解锁所有角色
+                    document.querySelectorAll('.role-card').forEach(card => {
+                        card.classList.remove('locked');
+                    });
                 }
+
+                // 加载自定义角色（Pro 用户）
+                loadCustomRoles();
             } else {
                 navUser.style.display = 'none';
                 navLogin.style.display = 'block';
                 navHistory.style.display = 'none';
+
+                // 隐藏自定义角色区域
+                document.getElementById('customRolesSection').classList.remove('show');
             }
         }
 
@@ -2960,6 +3274,10 @@
         let isPolishing = false;
         let agentHistory = [];
 
+        // 自定义角色相关状态
+        let customRoles = [];
+        let selectedIcon = '🎯';
+
         // ========== 身份选择 ==========
         function selectRole(el) {
             // 检查是否锁定
@@ -2968,8 +3286,181 @@
                 return;
             }
             document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            document.querySelectorAll('.custom-role-card').forEach(card => card.classList.remove('selected'));
             el.classList.add('selected');
             selectedRole = el.dataset.role;
+        }
+
+        function selectCustomRole(el) {
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            document.querySelectorAll('.custom-role-card').forEach(card => card.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedRole = el.dataset.role;
+        }
+
+        // ========== 自定义角色功能 ==========
+        async function loadCustomRoles() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('customRolesSection').classList.remove('show');
+                return;
+            }
+
+            // 检查是否为 Pro 用户
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            if (userData.plan !== 'pro') {
+                document.getElementById('customRolesSection').classList.remove('show');
+                return;
+            }
+
+            document.getElementById('customRolesSection').classList.add('show');
+
+            try {
+                const response = await fetch('/api/roles', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (response.ok) {
+                    customRoles = await response.json();
+                    renderCustomRoles();
+                }
+            } catch (error) {
+                console.error('加载自定义角色失败:', error);
+            }
+        }
+
+        function renderCustomRoles() {
+            const list = document.getElementById('customRolesList');
+            const empty = document.getElementById('customRolesEmpty');
+
+            if (customRoles.length === 0) {
+                empty.style.display = 'block';
+                list.querySelectorAll('.custom-role-card').forEach(el => el.remove());
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.querySelectorAll('.custom-role-card').forEach(el => el.remove());
+
+            customRoles.forEach(role => {
+                const card = document.createElement('div');
+                card.className = 'custom-role-card';
+                card.dataset.role = 'custom_' + role.id;
+                card.onclick = () => selectCustomRole(card);
+                card.innerHTML = `
+                    <button class="custom-role-delete" onclick="deleteCustomRole(event, ${role.id})" title="删除">×</button>
+                    <div class="custom-role-icon">${role.icon || '🎯'}</div>
+                    <div class="custom-role-name">${escapeHtml(role.name)}</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showCreateRoleModal() {
+            document.getElementById('createRoleModal').classList.add('show');
+            document.getElementById('roleNameInput').value = '';
+            document.getElementById('roleDescInput').value = '';
+            selectedIcon = '🎯';
+            document.querySelectorAll('.icon-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.icon === selectedIcon);
+            });
+        }
+
+        function closeCreateRoleModal() {
+            document.getElementById('createRoleModal').classList.remove('show');
+        }
+
+        function closeRoleModalOnOverlay(event) {
+            if (event.target.id === 'createRoleModal') {
+                closeCreateRoleModal();
+            }
+        }
+
+        // 图标选择器事件
+        document.getElementById('iconPicker').addEventListener('click', function(e) {
+            const option = e.target.closest('.icon-option');
+            if (option) {
+                document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedIcon = option.dataset.icon;
+            }
+        });
+
+        async function handleCreateRole(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('roleNameInput').value.trim();
+            const description = document.getElementById('roleDescInput').value.trim();
+
+            if (!name) {
+                showToast('请输入角色名称', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('createRoleBtn');
+            const btnText = document.getElementById('createRoleBtnText');
+            btn.disabled = true;
+            btnText.textContent = 'AI 生成中...';
+
+            try {
+                const response = await fetch('/api/roles', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, description, icon: selectedIcon })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '创建失败');
+                }
+
+                showToast('角色创建成功', 'success');
+                closeCreateRoleModal();
+                await loadCustomRoles();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = '创建角色';
+            }
+        }
+
+        async function deleteCustomRole(event, roleId) {
+            event.stopPropagation();
+
+            if (!confirm('确定要删除这个角色吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/roles/' + roleId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || '删除失败');
+                }
+
+                showToast('角色已删除', 'success');
+
+                // 如果删除的是当前选中的角色，切换到 PM
+                if (selectedRole === 'custom_' + roleId) {
+                    selectedRole = 'pm';
+                    document.querySelector('.role-card[data-role="pm"]').classList.add('selected');
+                }
+
+                await loadCustomRoles();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
         }
 
         // ========== 范本功能 ==========
@@ -4287,7 +4778,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.9.0</div>
+    <div class="version-footer">v2.0.0</div>
     <style>
         .version-footer {
             position: fixed;
