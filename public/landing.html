@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 周报润色 - 让周报更专业，让汇报更轻松</title>
+
+  <!-- SEO Meta -->
+  <meta name="description" content="AI 智能周报润色工具，一键将随意记录转化为专业周报。支持产品经理、开发工程师、运营等多种角色，AI 对话式修改，范本学习生成个人风格。">
+  <meta name="keywords" content="周报,AI周报,周报润色,周报生成,工作汇报,AI写作,职场效率">
+  <meta name="author" content="AI Report">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="AI 周报润色 - 让周报更专业">
+  <meta property="og:description" content="一键将随意记录转化为专业周报，支持多角色、AI对话修改、范本学习">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ai-report-production-1b54.up.railway.app/">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* 导航栏 */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background: rgba(15, 15, 26, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 15px;
+    }
+
+    .btn-login {
+      padding: 10px 24px;
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .btn-login:hover {
+      border-color: #fff;
+    }
+
+    .btn-start {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+
+    .btn-start:hover {
+      transform: scale(1.05);
+    }
+
+    /* Hero 区域 */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 20px 80px;
+      background: radial-gradient(ellipse at center, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(102, 126, 234, 0.2);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 30px;
+      font-size: 13px;
+      color: #a5b4fc;
+      margin-bottom: 30px;
+    }
+
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: #34c759;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 24px;
+      max-width: 800px;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 600px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 60px;
+    }
+
+    .btn-primary {
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: #fff;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      padding: 16px 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 60px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+    }
+
+    /* 功能区域 */
+    .features {
+      padding: 100px 40px;
+      background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-title h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-title p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 40px 30px;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+    }
+
+    .feature-card h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.6;
+    }
+
+    /* 角色区域 */
+    .roles {
+      padding: 100px 40px;
+      background: #0f0f1a;
+    }
+
+    .roles-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .role-cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .role-card {
+      flex: 1;
+      max-width: 300px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 40px 30px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .role-card:hover {
+      transform: scale(1.02);
+      border-color: rgba(102, 126, 234, 0.3);
+      box-shadow: 0 0 40px rgba(102, 126, 234, 0.1);
+    }
+
+    .role-emoji {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+
+    .role-card h3 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .role-card p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.6;
+    }
+
+    /* 定价区域 */
+    .pricing {
+      padding: 100px 40px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    }
+
+    .pricing-cards {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      flex: 1;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .pricing-card.featured::before {
+      content: '推荐';
+      position: absolute;
+      top: -12px;
+      right: 30px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pricing-card h3 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .pricing-card .desc {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .price {
+      margin-bottom: 30px;
+    }
+
+    .price-value {
+      font-size: 48px;
+      font-weight: 700;
+    }
+
+    .price-period {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 30px;
+    }
+
+    .pricing-features li {
+      padding: 12px 0;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pricing-features .check {
+      color: #34c759;
+    }
+
+    .pricing-features .cross {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .pricing-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+
+    .pricing-btn.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+
+    .pricing-btn.secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    /* 底部 CTA */
+    .cta {
+      padding: 100px 40px;
+      text-align: center;
+      background: radial-gradient(ellipse at center, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    }
+
+    .cta h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .cta p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 40px;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 40px;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer p {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 14px;
+    }
+
+    .footer a {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: #fff;
+    }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+      }
+
+      .role-cards {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .pricing-cards {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      .hero-stats {
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .navbar {
+        padding: 15px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="logo">AI 周报润色</div>
+    <div class="nav-btns">
+      <a href="/login.html" class="btn-login">登录</a>
+      <a href="/index.html" class="btn-start">开始使用</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      已服务 1000+ 职场人
+    </div>
+    <h1>让周报<span class="gradient">更专业</span><br>让汇报<span class="gradient">更轻松</span></h1>
+    <p>AI 智能润色，一键将随意记录转化为结构清晰、数据详实的专业周报。从此告别周报焦虑。</p>
+    <div class="hero-cta">
+      <a href="/index.html" class="btn-primary">免费体验</a>
+      <a href="#features" class="btn-secondary">了解更多</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-value">3次</div>
+        <div class="stat-label">每日免费额度</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">30秒</div>
+        <div class="stat-label">平均生成时间</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">98%</div>
+        <div class="stat-label">用户满意度</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 功能特点 -->
+  <section class="features" id="features">
+    <div class="section-title">
+      <h2>为什么选择我们</h2>
+      <p>专为职场人设计的 AI 周报工具</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>多角色适配</h3>
+        <p>支持产品经理、开发工程师、运营等多种角色，针对性优化输出风格和重点。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>AI 对话修改</h3>
+        <p>生成后不满意？通过自然语言对话，让 AI 精准理解你的修改意图。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>范本学习</h3>
+        <p>上传你满意的周报作为范本，AI 学习你的写作风格，生成专属内容。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>数据量化</h3>
+        <p>自动识别并强化成果数据，让你的贡献可衡量、有说服力。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>快速高效</h3>
+        <p>30秒内完成润色，节省你每周写周报的时间，专注更重要的工作。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>安全私密</h3>
+        <p>数据加密存储，不会用于模型训练，你的周报内容完全保密。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 角色 -->
+  <section class="roles">
+    <div class="roles-container">
+      <div class="section-title">
+        <h2>适配多种角色</h2>
+        <p>针对不同职位优化输出风格</p>
+      </div>
+      <div class="role-cards">
+        <div class="role-card">
+          <div class="role-emoji">🎯</div>
+          <h3>产品经理</h3>
+          <p>突出项目进展、用户价值、数据成果，结构清晰，重点突出。</p>
+        </div>
+        <div class="role-card">
+          <div class="role-emoji">💻</div>
+          <h3>开发工程师</h3>
+          <p>强调技术方案、代码量化、性能优化、技术债务管理。</p>
+        </div>
+        <div class="role-card">
+          <div class="role-emoji">📊</div>
+          <h3>运营</h3>
+          <p>数据驱动，ROI 分析，增长归因，竞品洞察。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 定价 -->
+  <section class="pricing" id="pricing">
+    <div class="section-title">
+      <h2>简单透明的定价</h2>
+      <p>选择适合你的方案</p>
+    </div>
+    <div class="pricing-cards">
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <p class="desc">适合偶尔使用</p>
+        <div class="price">
+          <span class="price-value">¥0</span>
+          <span class="price-period">/月</span>
+        </div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> 每日 3 次润色</li>
+          <li><span class="check">✓</span> 产品经理角色</li>
+          <li><span class="check">✓</span> 最近 7 条历史</li>
+          <li><span class="cross">✗</span> AI 对话修改</li>
+          <li><span class="cross">✗</span> 范本学习</li>
+          <li><span class="cross">✗</span> 全部角色</li>
+        </ul>
+        <a href="/index.html" class="pricing-btn secondary">开始使用</a>
+      </div>
+      <div class="pricing-card featured">
+        <h3>Pro</h3>
+        <p class="desc">适合职场达人</p>
+        <div class="price">
+          <span class="price-value">¥9.9</span>
+          <span class="price-period">/月</span>
+        </div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span> 无限次润色</li>
+          <li><span class="check">✓</span> 全部角色解锁</li>
+          <li><span class="check">✓</span> 无限历史记录</li>
+          <li><span class="check">✓</span> AI 对话修改</li>
+          <li><span class="check">✓</span> 范本学习</li>
+          <li><span class="check">✓</span> 优先技术支持</li>
+        </ul>
+        <a href="/login.html" class="pricing-btn primary">立即升级</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>告别周报焦虑，从现在开始</h2>
+    <p>每天免费 3 次，无需绑定信用卡</p>
+    <a href="/index.html" class="btn-primary">免费体验</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2024 AI 周报润色 · <a href="/index.html">开始使用</a> · <a href="/admin.html">管理后台</a></p>
+    <p style="margin-top: 10px;">v1.3.0</p>
+  </footer>
+</body>
+</html>

@@ -24,9 +24,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
-// 根路径重定向
+// 根路径重定向到 Landing Page
 app.get('/', (req, res) => {
-  res.redirect('/index.html');
+  res.redirect('/landing.html');
 });
 
 // 代理配置
