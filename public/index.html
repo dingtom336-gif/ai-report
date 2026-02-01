@@ -604,20 +604,75 @@
             margin-bottom: 12px;
         }
 
-        .btn-copy {
-            padding: 6px 14px;
+        .output-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .btn-copy:hover {
+        .btn-action:hover {
             background: rgba(255, 255, 255, 0.15);
             border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-action svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .export-dropdown {
+            position: relative;
+        }
+
+        .export-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            min-width: 160px;
+            overflow: hidden;
+        }
+
+        .export-menu.show {
+            display: block;
+        }
+
+        .export-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .export-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .export-icon {
+            font-size: 16px;
         }
 
         .output-content {
@@ -660,6 +715,57 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 满意度评分 */
+        .rating-section {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .rating-prompt {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 12px;
+        }
+
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .rating-stars .star {
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rating-stars .star:hover,
+        .rating-stars .star.hover {
+            color: #ffd700;
+            transform: scale(1.1);
+        }
+
+        .rating-stars .star.active {
+            color: #ffd700;
+        }
+
+        .rating-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            padding: 0 20px;
+        }
+
+        .rating-thanks {
+            font-size: 13px;
+            color: #4ade80;
+            margin-top: 8px;
         }
 
         /* 润色按钮 */
@@ -2243,9 +2349,60 @@
                 <div class="card output-section">
                     <div class="output-header">
                         <div class="section-title">润色结果</div>
-                        <button class="btn-copy" onclick="copyResult()">复制</button>
+                        <div class="output-actions">
+                            <button class="btn-action" onclick="copyResult()" title="复制">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                复制
+                            </button>
+                            <div class="export-dropdown">
+                                <button class="btn-action" onclick="toggleExportMenu()" title="导出">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    导出
+                                </button>
+                                <div class="export-menu" id="exportMenu">
+                                    <div class="export-item" onclick="exportMarkdown()">
+                                        <span class="export-icon">📄</span>
+                                        <span>Markdown (.md)</span>
+                                    </div>
+                                    <div class="export-item" onclick="exportWord()">
+                                        <span class="export-icon">📝</span>
+                                        <span>Word (.docx)</span>
+                                    </div>
+                                    <div class="export-item" onclick="exportImage()">
+                                        <span class="export-icon">🖼️</span>
+                                        <span>图片 (.png)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="output-content empty" id="outputContent">润色后的周报将显示在这里</div>
+
+                    <!-- 满意度评分 - 润色完成后显示 -->
+                    <div class="rating-section" id="ratingSection" style="display: none;">
+                        <div class="rating-prompt">对本次润色结果满意吗？</div>
+                        <div class="rating-stars" id="ratingStars">
+                            <span class="star" data-rating="1">★</span>
+                            <span class="star" data-rating="2">★</span>
+                            <span class="star" data-rating="3">★</span>
+                            <span class="star" data-rating="4">★</span>
+                            <span class="star" data-rating="5">★</span>
+                        </div>
+                        <div class="rating-labels">
+                            <span>不满意</span>
+                            <span>非常满意</span>
+                        </div>
+                        <div class="rating-thanks" id="ratingThanks" style="display: none;">
+                            感谢您的反馈！
+                        </div>
+                    </div>
 
                     <!-- AI Agent 入口 - 润色完成后显示 -->
                     <div class="ai-agent-entry" id="aiAgentEntry">
@@ -2798,6 +2955,7 @@
                             } else if (parsed.type === 'done') {
                                 // 完成
                                 output.classList.remove('streaming');
+                                currentReportId = parsed.reportId || null;
                                 showAgentEntry();
                                 resetAgentState();
                                 showToast('润色完成', 'success');
@@ -2863,6 +3021,7 @@
             }
 
             output.textContent = data.result;
+            currentReportId = data.reportId || null;
             showAgentEntry();
             resetAgentState();
             showToast('润色完成', 'success');
@@ -2908,6 +3067,155 @@
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
                 showToast('已复制', 'success');
+            }
+        }
+
+        // ========== 导出功能 ==========
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('show');
+        }
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('exportMenu');
+            const dropdown = e.target.closest('.export-dropdown');
+            if (!dropdown && menu) {
+                menu.classList.remove('show');
+            }
+        });
+
+        function getOutputContent() {
+            const output = document.getElementById('outputContent');
+            if (output.classList.contains('empty')) {
+                showToast('没有可导出的内容', 'error');
+                return null;
+            }
+            return output.textContent;
+        }
+
+        function exportMarkdown() {
+            const content = getOutputContent();
+            if (!content) return;
+
+            const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `周报_${new Date().toISOString().split('T')[0]}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('已下载 Markdown', 'success');
+            document.getElementById('exportMenu').classList.remove('show');
+        }
+
+        function exportWord() {
+            const content = getOutputContent();
+            if (!content) return;
+
+            // 创建简单的 Word 兼容 HTML
+            const html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                      xmlns:w="urn:schemas-microsoft-com:office:word"
+                      xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="utf-8">
+                    <title>周报</title>
+                    <style>
+                        body { font-family: 'Microsoft YaHei', sans-serif; font-size: 14px; line-height: 1.8; }
+                        h2 { font-size: 16px; margin-top: 16px; }
+                    </style>
+                </head>
+                <body>
+                    ${content.split('\n').map(line => {
+                        if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
+                        if (line.startsWith('- ')) return `<p>• ${line.slice(2)}</p>`;
+                        if (line.trim()) return `<p>${line}</p>`;
+                        return '';
+                    }).join('\n')}
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `周报_${new Date().toISOString().split('T')[0]}.doc`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('已下载 Word', 'success');
+            document.getElementById('exportMenu').classList.remove('show');
+        }
+
+        async function exportImage() {
+            const content = getOutputContent();
+            if (!content) return;
+
+            // 动态加载 html2canvas
+            if (!window.html2canvas) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = () => doExportImage();
+                document.head.appendChild(script);
+            } else {
+                doExportImage();
+            }
+        }
+
+        async function doExportImage() {
+            showToast('正在生成图片...', 'info');
+
+            const output = document.getElementById('outputContent');
+
+            // 创建临时容器用于截图
+            const tempContainer = document.createElement('div');
+            tempContainer.style.cssText = `
+                position: fixed;
+                left: -9999px;
+                top: 0;
+                width: 800px;
+                padding: 40px;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                color: white;
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                font-size: 14px;
+                line-height: 1.8;
+            `;
+
+            tempContainer.innerHTML = `
+                <div style="margin-bottom: 30px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">📝 AI 周报润色</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 12px;">${new Date().toLocaleDateString('zh-CN')}</div>
+                </div>
+                <div style="white-space: pre-wrap; padding: 24px; background: rgba(0,0,0,0.3); border-radius: 12px;">
+                    ${output.textContent}
+                </div>
+                <div style="margin-top: 24px; text-align: center; color: rgba(255,255,255,0.3); font-size: 11px;">
+                    由「AI周报润色」生成 | ai-report.com
+                </div>
+            `;
+
+            document.body.appendChild(tempContainer);
+
+            try {
+                const canvas = await html2canvas(tempContainer, {
+                    backgroundColor: '#1a1a2e',
+                    scale: 2
+                });
+
+                const url = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `周报_${new Date().toISOString().split('T')[0]}.png`;
+                a.click();
+                showToast('已下载图片', 'success');
+            } catch (error) {
+                console.error('导出图片失败:', error);
+                showToast('导出失败', 'error');
+            } finally {
+                document.body.removeChild(tempContainer);
+                document.getElementById('exportMenu').classList.remove('show');
             }
         }
 
@@ -2994,12 +3302,95 @@
             }
         });
 
+        // ========== 满意度评分 ==========
+        let currentReportId = null;
+
+        function initRatingStars() {
+            const stars = document.querySelectorAll('#ratingStars .star');
+            stars.forEach(star => {
+                star.addEventListener('mouseenter', () => {
+                    const rating = parseInt(star.dataset.rating);
+                    highlightStars(rating);
+                });
+
+                star.addEventListener('mouseleave', () => {
+                    resetStarsHover();
+                });
+
+                star.addEventListener('click', () => {
+                    const rating = parseInt(star.dataset.rating);
+                    submitRating(rating);
+                });
+            });
+        }
+
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('#ratingStars .star');
+            stars.forEach(star => {
+                const starRating = parseInt(star.dataset.rating);
+                star.classList.toggle('hover', starRating <= rating);
+            });
+        }
+
+        function resetStarsHover() {
+            const stars = document.querySelectorAll('#ratingStars .star');
+            stars.forEach(star => star.classList.remove('hover'));
+        }
+
+        async function submitRating(rating) {
+            const stars = document.querySelectorAll('#ratingStars .star');
+            stars.forEach(star => {
+                const starRating = parseInt(star.dataset.rating);
+                star.classList.toggle('active', starRating <= rating);
+            });
+
+            // 如果有 reportId，保存到后端
+            if (currentReportId) {
+                try {
+                    await fetch(`/api/reports/${currentReportId}/rating`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ rating })
+                    });
+                } catch (error) {
+                    console.error('保存评分失败:', error);
+                }
+            }
+
+            // 显示感谢信息
+            document.getElementById('ratingThanks').style.display = 'block';
+            document.getElementById('ratingStars').style.pointerEvents = 'none';
+        }
+
+        function showRatingSection() {
+            const section = document.getElementById('ratingSection');
+            if (section) {
+                section.style.display = 'block';
+                // 重置状态
+                const stars = document.querySelectorAll('#ratingStars .star');
+                stars.forEach(star => star.classList.remove('active', 'hover'));
+                document.getElementById('ratingThanks').style.display = 'none';
+                document.getElementById('ratingStars').style.pointerEvents = 'auto';
+            }
+        }
+
+        function hideRatingSection() {
+            const section = document.getElementById('ratingSection');
+            if (section) {
+                section.style.display = 'none';
+            }
+        }
+
+        // 初始化评分
+        initRatingStars();
+
         // ========== AI Agent 面板 ==========
         function showAgentEntry() {
             const entry = document.getElementById('aiAgentEntry');
             if (entry) {
                 entry.classList.add('show');
             }
+            showRatingSection();
         }
 
         function hideAgentEntry() {
@@ -3007,6 +3398,7 @@
             if (entry) {
                 entry.classList.remove('show');
             }
+            hideRatingSection();
         }
 
         function openAgentPanel() {
@@ -3535,7 +3927,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.6.0</div>
+    <div class="version-footer">v1.7.0</div>
     <style>
         .version-footer {
             position: fixed;

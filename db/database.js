@@ -130,6 +130,19 @@ function initTables() {
     )
   `);
 
+  // 润色结果评分表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS report_ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_id INTEGER NOT NULL,
+      user_id INTEGER,
+      rating INTEGER NOT NULL,
+      feedback TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(report_id)
+    )
+  `);
+
   console.log('数据库表初始化完成');
 
   // 自动创建管理员账号
@@ -653,6 +666,67 @@ export const GuestUsage = {
     const today = new Date().toISOString().split('T')[0];
     const record = guestUsageQueries.findByIpAndDate.get(ip, today);
     return record ? record.usage_count : 0;
+  }
+};
+
+// ========== ReportRatings CRUD ==========
+const ratingQueries = {
+  create: db.prepare(`
+    INSERT INTO report_ratings (report_id, user_id, rating, feedback)
+    VALUES (@report_id, @user_id, @rating, @feedback)
+  `),
+
+  update: db.prepare(`
+    UPDATE report_ratings SET rating = @rating, feedback = @feedback
+    WHERE report_id = @report_id
+  `),
+
+  findByReportId: db.prepare(`
+    SELECT * FROM report_ratings WHERE report_id = ?
+  `),
+
+  getAverageRating: db.prepare(`
+    SELECT AVG(rating) as avg_rating, COUNT(*) as count FROM report_ratings
+  `),
+
+  getRatingDistribution: db.prepare(`
+    SELECT rating, COUNT(*) as count FROM report_ratings GROUP BY rating ORDER BY rating
+  `)
+};
+
+export const ReportRatings = {
+  upsert(data) {
+    const existing = ratingQueries.findByReportId.get(data.report_id);
+    if (existing) {
+      ratingQueries.update.run({
+        report_id: data.report_id,
+        rating: data.rating,
+        feedback: data.feedback || null
+      });
+      return existing.id;
+    } else {
+      const result = ratingQueries.create.run({
+        report_id: data.report_id,
+        user_id: data.user_id || null,
+        rating: data.rating,
+        feedback: data.feedback || null
+      });
+      return result.lastInsertRowid;
+    }
+  },
+
+  findByReportId(reportId) {
+    return ratingQueries.findByReportId.get(reportId);
+  },
+
+  getStats() {
+    const avg = ratingQueries.getAverageRating.get();
+    const distribution = ratingQueries.getRatingDistribution.all();
+    return {
+      averageRating: avg.avg_rating ? Math.round(avg.avg_rating * 10) / 10 : null,
+      totalRatings: avg.count,
+      distribution
+    };
   }
 };
 

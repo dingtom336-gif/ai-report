@@ -7,7 +7,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
 
 // 数据库和认证模块
-import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage } from './db/database.js';
+import { Users, Reports, Templates, ChatHistory, UsageLogs, Feedback, AdminStats, VerificationCodes, GuestUsage, ReportRatings } from './db/database.js';
 import { generateToken, verifyPassword, hashPassword, verifyToken, optionalToken, requireAdmin, checkUsageLimit } from './middleware/auth.js';
 import { checkRoleAccess, checkChatAccess, checkTemplateAccess, getHistoryLimit, getUserPermissions } from './middleware/paywall.js';
 
@@ -869,6 +869,36 @@ app.delete('/api/reports/:id', verifyToken, (req, res) => {
     return res.status(404).json({ error: '周报不存在' });
   }
   res.json({ success: true });
+});
+
+// ========== 评分 API ==========
+app.post('/api/reports/:id/rating', optionalToken, (req, res) => {
+  const { rating, feedback } = req.body;
+  const reportId = parseInt(req.params.id);
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: '评分必须是1-5之间的整数' });
+  }
+
+  try {
+    ReportRatings.upsert({
+      report_id: reportId,
+      user_id: req.user?.id || null,
+      rating: Math.round(rating),
+      feedback: feedback || null
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('保存评分失败:', error);
+    res.status(500).json({ error: '保存失败' });
+  }
+});
+
+app.get('/api/reports/:id/rating', (req, res) => {
+  const reportId = parseInt(req.params.id);
+  const rating = ReportRatings.findByReportId(reportId);
+  res.json(rating || { rating: null });
 });
 
 // ========== 范本 API (Pro) ==========
