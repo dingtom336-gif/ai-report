@@ -2634,6 +2634,113 @@
                 right: 0;
             }
         }
+
+        /* 新用户引导 */
+        .guide-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .guide-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .guide-card {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .guide-overlay.show .guide-card {
+            transform: scale(1);
+        }
+        .guide-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .guide-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .guide-desc {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .guide-steps {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .guide-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .guide-step:last-child {
+            margin-bottom: 0;
+        }
+        .guide-step-num {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .guide-step-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+        .guide-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .guide-btn:hover {
+            transform: scale(1.02);
+        }
+        .guide-skip {
+            margin-top: 12px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+        }
+        .guide-skip:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -4775,10 +4882,57 @@
         if (outputOnLoad && !outputOnLoad.classList.contains('empty')) {
             showAgentEntry();
         }
+
+        // ========== 新用户引导 ==========
+        function checkNewUser() {
+            const hasSeenGuide = localStorage.getItem('hasSeenGuide');
+            if (!hasSeenGuide) {
+                setTimeout(() => {
+                    showGuide();
+                }, 500);
+            }
+        }
+
+        function showGuide() {
+            document.getElementById('newUserGuide').classList.add('show');
+        }
+
+        function closeGuide() {
+            document.getElementById('newUserGuide').classList.remove('show');
+            localStorage.setItem('hasSeenGuide', 'true');
+        }
+
+        // 初始化新用户引导
+        checkNewUser();
     </script>
 
+    <!-- 新用户引导弹窗 -->
+    <div class="guide-overlay" id="newUserGuide">
+        <div class="guide-card">
+            <div class="guide-icon">👋</div>
+            <div class="guide-title">欢迎使用周报优化神器</div>
+            <div class="guide-desc">AI 帮你将随意记录转化为专业周报，让汇报更轻松</div>
+            <div class="guide-steps">
+                <div class="guide-step">
+                    <div class="guide-step-num">1</div>
+                    <div class="guide-step-text">选择你的角色（产品经理、开发、运营）</div>
+                </div>
+                <div class="guide-step">
+                    <div class="guide-step-num">2</div>
+                    <div class="guide-step-text">在左侧输入你的工作内容，随意写就行</div>
+                </div>
+                <div class="guide-step">
+                    <div class="guide-step-num">3</div>
+                    <div class="guide-step-text">点击「一键润色」，AI 帮你生成专业周报</div>
+                </div>
+            </div>
+            <button class="guide-btn" onclick="closeGuide()">开始使用</button>
+            <div class="guide-skip" onclick="closeGuide()">我已了解，跳过引导</div>
+        </div>
+    </div>
+
     <!-- 版本号 -->
-    <div class="version-footer">v2.0.0</div>
+    <div class="version-footer">v2.4.0</div>
     <style>
         .version-footer {
             position: fixed;
