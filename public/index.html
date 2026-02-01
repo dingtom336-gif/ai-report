@@ -646,6 +646,17 @@
             animation: fadeIn 0.5s ease;
         }
 
+        .output-content.streaming::after {
+            content: '▋';
+            animation: blink 0.8s infinite;
+            color: #667eea;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1655,6 +1666,18 @@
         .thinking-text {
             font-size: 13px;
             color: rgba(255, 255, 255, 0.5);
+        }
+
+        .thinking-preview {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         /* 空状态 */
@@ -2682,7 +2705,7 @@
             hint.textContent = '请先保存范本';
         }
 
-        // ========== 润色功能 ==========
+        // ========== 润色功能（流式输出） ==========
         async function polish() {
             const content = document.getElementById('contentInput').value.trim();
             if (!content) {
@@ -2720,18 +2743,24 @@
             const useTemplate = document.getElementById('useTemplateCheckbox').checked;
             const template = useTemplate ? localStorage.getItem(TEMPLATE_KEY) : null;
 
+            const output = document.getElementById('outputContent');
+            output.textContent = '';
+            output.classList.remove('empty');
+            output.classList.add('result', 'streaming');
+
             try {
-                const response = await fetch('/api/polish', {
+                // 尝试流式请求
+                const response = await fetch('/api/polish/stream', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ content, role: selectedRole, template, useTemplate }),
                     signal: polishController.signal
                 });
 
-                const data = await response.json();
-                if (!response.ok) {
-                    // 检查是否是限额错误
-                    if (data.code === 'DAILY_LIMIT_REACHED') {
+                // 非流式响应（错误情况）
+                if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
+                    const data = await response.json();
+                    if (data.code === 'DAILY_LIMIT_REACHED' || data.code === 'GUEST_LIMIT_REACHED') {
                         showUpgradeModal('limit');
                         return;
                     }
@@ -2742,36 +2771,65 @@
                     throw new Error(data.error || '润色失败');
                 }
 
-                const output = document.getElementById('outputContent');
-                output.textContent = data.result;
-                output.classList.remove('empty');
-                output.classList.add('result');
+                // 流式读取
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-                // 显示AI Agent入口
-                showAgentEntry();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                // 重置Agent状态
-                agentHistory = [];
-                document.getElementById('agentMessages').innerHTML = `
-                    <div class="agent-empty" id="agentEmpty">
-                        <div class="agent-empty-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
-                                <path d="M2 17L12 22L22 17"/>
-                                <path d="M2 12L12 17L22 12"/>
-                            </svg>
-                        </div>
-                        <h4>开始与 AI Agent 对话</h4>
-                        <p>告诉 Agent 你想如何修改周报<br>它会思考、执行并展示修改结果</p>
-                    </div>
-                `;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
 
-                showToast('润色完成', 'success');
+                    for (const line of lines) {
+                        if (!line.startsWith('data:')) continue;
+                        const data = line.slice(5).trim();
+                        if (!data) continue;
+
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.type === 'chunk') {
+                                output.textContent += parsed.content;
+                                // 自动滚动到底部
+                                output.scrollTop = output.scrollHeight;
+                            } else if (parsed.type === 'done') {
+                                // 完成
+                                output.classList.remove('streaming');
+                                showAgentEntry();
+                                resetAgentState();
+                                showToast('润色完成', 'success');
+                            } else if (parsed.type === 'error') {
+                                output.classList.remove('streaming');
+                                throw new Error(parsed.error);
+                            }
+                        } catch (e) {
+                            if (e.message && !e.message.includes('JSON')) {
+                                throw e;
+                            }
+                        }
+                    }
+                }
             } catch (error) {
+                output.classList.remove('streaming');
                 if (error.name === 'AbortError') {
                     showToast('已取消润色', 'info');
+                    output.textContent = '';
+                    output.classList.add('empty');
+                    output.classList.remove('result');
                 } else {
-                    showToast(error.message, 'error');
+                    // 流式失败，回退到非流式
+                    console.warn('流式请求失败，尝试非流式:', error.message);
+                    try {
+                        await polishFallback(content, selectedRole, template, useTemplate, output);
+                    } catch (fallbackError) {
+                        showToast(fallbackError.message, 'error');
+                        output.textContent = '';
+                        output.classList.add('empty');
+                        output.classList.remove('result');
+                    }
                 }
             } finally {
                 isPolishing = false;
@@ -2781,6 +2839,51 @@
                 btn.innerHTML = '开始润色';
                 progressSection.classList.remove('show');
             }
+        }
+
+        // 非流式润色（fallback）
+        async function polishFallback(content, role, template, useTemplate, output) {
+            const response = await fetch('/api/polish', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ content, role, template, useTemplate })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                if (data.code === 'DAILY_LIMIT_REACHED' || data.code === 'GUEST_LIMIT_REACHED') {
+                    showUpgradeModal('limit');
+                    return;
+                }
+                if (data.code === 'ROLE_RESTRICTED') {
+                    showUpgradeModal('role');
+                    return;
+                }
+                throw new Error(data.error || '润色失败');
+            }
+
+            output.textContent = data.result;
+            showAgentEntry();
+            resetAgentState();
+            showToast('润色完成', 'success');
+        }
+
+        // 重置 Agent 状态
+        function resetAgentState() {
+            agentHistory = [];
+            document.getElementById('agentMessages').innerHTML = `
+                <div class="agent-empty" id="agentEmpty">
+                    <div class="agent-empty-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                            <path d="M2 17L12 22L22 17"/>
+                            <path d="M2 12L12 17L22 12"/>
+                        </svg>
+                    </div>
+                    <h4>开始与 AI Agent 对话</h4>
+                    <p>告诉 Agent 你想如何修改周报<br>它会思考、执行并展示修改结果</p>
+                </div>
+            `;
         }
 
         function cancelPolish() {
@@ -2976,7 +3079,8 @@
             updateAgentStatus('thinking', 'Thinking...');
 
             try {
-                const response = await fetch('/api/chat', {
+                // 尝试流式请求
+                const response = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
@@ -2986,8 +3090,9 @@
                     })
                 });
 
-                const data = await response.json();
-                if (!response.ok) {
+                // 检查是否是流式响应
+                if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
+                    const data = await response.json();
                     if (data.code === 'FEATURE_RESTRICTED') {
                         showUpgradeModal('chat');
                         return;
@@ -3000,24 +3105,62 @@
                     throw new Error(data.error || '修改失败');
                 }
 
-                // 移除思考状态
-                removeAgentThinking(thinkingId);
+                // 流式读取
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let streamContent = '';
 
-                // 添加 ReAct 响应
-                addAgentReactResponse(data.thought, data.newReport, data.observation);
+                // 更新状态为 acting
+                updateAgentStatus('acting', 'Acting...');
 
-                // 更新历史
-                agentHistory.push({ user: message, assistant: data.observation });
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                // 更新当前报告
-                currentEditableReport = data.newReport;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
 
-                // 更新预览
-                document.getElementById('agentPreviewContent').textContent = data.newReport;
+                    for (const line of lines) {
+                        if (!line.startsWith('data:')) continue;
+                        const dataStr = line.slice(5).trim();
+                        if (!dataStr) continue;
 
-                // 更新状态
-                updateAgentStatus('ready', 'Ready');
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.type === 'chunk') {
+                                streamContent += data.content;
+                                // 更新思考状态显示流式内容
+                                updateAgentThinkingContent(thinkingId, streamContent);
+                            } else if (data.type === 'done' && data.parsed) {
+                                // 移除思考状态
+                                removeAgentThinking(thinkingId);
 
+                                // 添加 ReAct 响应
+                                addAgentReactResponse(data.parsed.thought, data.parsed.newReport, data.parsed.observation);
+
+                                // 更新历史
+                                agentHistory.push({ user: message, assistant: data.parsed.observation });
+
+                                // 更新当前报告
+                                currentEditableReport = data.parsed.newReport;
+
+                                // 更新预览
+                                document.getElementById('agentPreviewContent').textContent = data.parsed.newReport;
+
+                                // 更新状态
+                                updateAgentStatus('ready', 'Ready');
+                            } else if (data.type === 'error') {
+                                throw new Error(data.error);
+                            }
+                        } catch (e) {
+                            if (e.message && !e.message.includes('JSON')) {
+                                throw e;
+                            }
+                        }
+                    }
+                }
             } catch (error) {
                 removeAgentThinking(thinkingId);
                 updateAgentStatus('error', 'Error');
@@ -3061,6 +3204,40 @@
         function removeAgentThinking(id) {
             const el = document.getElementById(id);
             if (el) el.remove();
+        }
+
+        function updateAgentThinkingContent(id, content) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // 提取已解析的部分进行预览
+            let preview = content;
+
+            // 尝试提取 thought 部分
+            const thoughtMatch = content.match(/<thought>([\s\S]*?)(<\/thought>|$)/);
+            if (thoughtMatch) {
+                preview = thoughtMatch[1].trim();
+                if (preview.length > 100) {
+                    preview = preview.substring(0, 100) + '...';
+                }
+            } else if (content.length > 100) {
+                preview = content.substring(0, 100) + '...';
+            }
+
+            el.innerHTML = `
+                <div class="agent-thinking streaming">
+                    <div class="thinking-animation">
+                        <div class="thinking-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="thinking-text">Agent 正在思考...</span>
+                    </div>
+                    <div class="thinking-preview">${escapeHtml(preview)}</div>
+                </div>
+            `;
+
+            const container = document.getElementById('agentMessages');
+            container.scrollTop = container.scrollHeight;
         }
 
         function addAgentReactResponse(thought, newReport, observation) {
@@ -3358,7 +3535,7 @@
     </script>
 
     <!-- 版本号 -->
-    <div class="version-footer">v1.5.0</div>
+    <div class="version-footer">v1.6.0</div>
     <style>
         .version-footer {
             position: fixed;

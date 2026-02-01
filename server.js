@@ -220,6 +220,108 @@ function callDeepSeekAPI(prompt) {
   });
 }
 
+// 流式调用 DeepSeek API
+function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+
+  const postData = JSON.stringify({
+    model: 'deepseek-chat',
+    messages: [{ role: 'user', content: prompt }],
+    stream: true
+  });
+
+  const options = {
+    hostname: 'api.deepseek.com',
+    port: 443,
+    path: '/v1/chat/completions',
+    method: 'POST',
+    ...(agent && { agent }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Length': Buffer.byteLength(postData)
+    }
+  };
+
+  const req = https.request(options, (res) => {
+    if (res.statusCode !== 200) {
+      let errorData = '';
+      res.on('data', (chunk) => errorData += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(errorData);
+          onError(new Error(parsed.error?.message || `API 错误: ${res.statusCode}`));
+        } catch {
+          onError(new Error(`API 错误: ${res.statusCode}`));
+        }
+      });
+      return;
+    }
+
+    let buffer = '';
+    let fullContent = '';
+
+    res.on('data', (chunk) => {
+      buffer += chunk.toString();
+
+      // 处理 SSE 格式数据
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // 保留不完整的行
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
+
+        const data = trimmed.slice(5).trim();
+        if (data === '[DONE]') {
+          onDone(fullContent);
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            fullContent += content;
+            onChunk(content);
+          }
+        } catch {
+          // 忽略解析错误
+        }
+      }
+    });
+
+    res.on('end', () => {
+      // 处理剩余 buffer
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith('data:')) {
+          const data = trimmed.slice(5).trim();
+          if (data !== '[DONE]') {
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                onChunk(content);
+              }
+            } catch {}
+          }
+        }
+      }
+      onDone(fullContent);
+    });
+
+    res.on('error', onError);
+  });
+
+  req.on('error', onError);
+  req.write(postData);
+  req.end();
+
+  return req;
+}
+
 // ReAct Agent Prompt 构建
 function buildChatPrompt(currentReport, message, history = []) {
   const historyText = history.slice(-10).map(h =>
@@ -512,6 +614,106 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
   }
 });
 
+// ========== 流式润色接口 ==========
+app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) => {
+  const { content, role = 'pm', template, useTemplate } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: '请输入周报内容' });
+  }
+
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return res.status(500).json({ error: 'API Key 未配置' });
+  }
+
+  // 用量检查
+  let usageInfo = null;
+
+  if (req.user) {
+    const usageResult = Users.checkAndIncrementUsage(req.user);
+    if (!usageResult.allowed) {
+      return res.status(429).json({
+        error: '今日免费次数已用完',
+        code: 'DAILY_LIMIT_REACHED',
+        limit: usageResult.limit
+      });
+    }
+    usageInfo = {
+      remaining: req.user.plan === 'pro' ? null : usageResult.remaining,
+      limit: req.user.plan === 'pro' ? null : usageResult.limit
+    };
+  } else {
+    const clientIp = getClientIp(req);
+    const guestResult = GuestUsage.checkAndIncrement(clientIp, 3);
+    if (!guestResult.allowed) {
+      return res.status(429).json({
+        error: '游客试用次数已用完，请登录后继续使用',
+        code: 'GUEST_LIMIT_REACHED',
+        limit: guestResult.limit
+      });
+    }
+    usageInfo = {
+      remaining: guestResult.remaining,
+      limit: guestResult.limit,
+      isGuest: true
+    };
+  }
+
+  const validRoles = ['dev', 'ops', 'pm'];
+  const finalRole = validRoles.includes(role) ? role : 'pm';
+  const prompt = buildPrompt(content, finalRole, template, useTemplate);
+
+  // 设置 SSE 响应头
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // 禁用 Nginx/代理缓冲
+
+  // 发送初始事件（用量信息）
+  res.write(`data: ${JSON.stringify({ type: 'start', usageInfo })}\n\n`);
+
+  callDeepSeekAPIStream(
+    prompt,
+    // onChunk
+    (chunk) => {
+      res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+    },
+    // onDone
+    (fullContent) => {
+      // 登录用户保存周报
+      let reportId = null;
+      if (req.user) {
+        reportId = Reports.create({
+          user_id: req.user.id,
+          original_content: content,
+          polished_content: fullContent,
+          role_type: finalRole,
+          used_template: useTemplate && template
+        });
+        UsageLogs.create({
+          user_id: req.user.id,
+          action: 'polish',
+          metadata: { role: finalRole, reportId, stream: true }
+        });
+      }
+
+      res.write(`data: ${JSON.stringify({ type: 'done', reportId })}\n\n`);
+      res.end();
+    },
+    // onError
+    (error) => {
+      console.error('流式 API 调用失败:', error.message);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
+    }
+  );
+
+  // 客户端断开连接时清理
+  req.on('close', () => {
+    res.end();
+  });
+});
+
 // ========== AI 对话修改接口 (需要登录+Pro) ==========
 app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
   const { currentReport, message, history = [], reportId } = req.body;
@@ -567,6 +769,77 @@ app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
 
     res.status(500).json({ error: `修改失败: ${error.message || '请稍后重试'}` });
   }
+});
+
+// ========== 流式 AI 对话修改接口 ==========
+app.post('/api/chat/stream', verifyToken, checkChatAccess, async (req, res) => {
+  const { currentReport, message, history = [], reportId } = req.body;
+
+  if (!currentReport || !currentReport.trim()) {
+    return res.status(400).json({ error: '当前周报内容不能为空' });
+  }
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: '请输入修改指令' });
+  }
+
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return res.status(500).json({ error: 'API Key 未配置' });
+  }
+
+  const prompt = buildChatPrompt(currentReport, message, history);
+
+  // 设置 SSE 响应头
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
+
+  callDeepSeekAPIStream(
+    prompt,
+    // onChunk
+    (chunk) => {
+      res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+    },
+    // onDone
+    (fullContent) => {
+      const parsed = parseReActResponse(fullContent);
+
+      // 保存对话历史
+      if (reportId) {
+        ChatHistory.create({
+          report_id: reportId,
+          user_message: message,
+          ai_thought: parsed.thought,
+          ai_action: parsed.newReport,
+          ai_observation: parsed.observation
+        });
+
+        Reports.update(reportId, parsed.newReport);
+      }
+
+      UsageLogs.create({
+        user_id: req.user.id,
+        action: 'chat',
+        metadata: { reportId, stream: true }
+      });
+
+      res.write(`data: ${JSON.stringify({ type: 'done', parsed })}\n\n`);
+      res.end();
+    },
+    // onError
+    (error) => {
+      console.error('流式 Chat API 调用失败:', error.message);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
+    }
+  );
+
+  req.on('close', () => {
+    res.end();
+  });
 });
 
 // ========== 周报历史 API ==========
