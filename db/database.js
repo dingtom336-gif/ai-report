@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -118,6 +119,29 @@ function initTables() {
   `);
 
   console.log('数据库表初始化完成');
+
+  // 自动创建管理员账号
+  initAdminUser();
+}
+
+// 创建管理员账号（如果不存在）
+function initAdminUser() {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@ai-report.com';
+
+  const existingStmt = db.prepare('SELECT * FROM users WHERE email = ?');
+  const existing = existingStmt.get(adminEmail);
+
+  if (!existing) {
+    const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const passwordHash = bcrypt.hashSync(defaultPassword, 10);
+
+    const insertStmt = db.prepare(`
+      INSERT INTO users (email, password_hash, nickname, role, plan)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    insertStmt.run(adminEmail, passwordHash, '管理员', 'admin', 'pro');
+    console.log(`[Admin] 创建管理员账号: ${adminEmail}`);
+  }
 }
 
 // 立即初始化表（必须在 prepared statements 之前）
