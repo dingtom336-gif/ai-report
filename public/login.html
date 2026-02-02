@@ -285,6 +285,30 @@
       text-decoration: underline;
     }
 
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrapper input {
+      flex: 1;
+      padding-right: 40px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.5;
+      user-select: none;
+    }
+
+    .toggle-password:hover {
+      opacity: 1;
+    }
+
     @media (max-width: 480px) {
       .auth-container {
         border-radius: 12px;
@@ -328,12 +352,15 @@
       <!-- 密码登录表单 -->
       <form id="password-form" class="tab-content active">
         <div class="form-group">
-          <label for="username">用户名</label>
-          <input type="text" id="username" placeholder="请输入用户名" maxlength="16" required>
+          <label for="username">用户名 / 邮箱</label>
+          <input type="text" id="username" placeholder="请输入用户名或邮箱" maxlength="50" required>
         </div>
         <div class="form-group">
           <label for="password">密码</label>
-          <input type="password" id="password" placeholder="请输入密码" required>
+          <div class="password-wrapper">
+            <input type="password" id="password" placeholder="请输入密码" required>
+            <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+          </div>
         </div>
         <button type="submit" class="submit-btn">登录</button>
         <div class="register-link">
@@ -365,11 +392,17 @@
         </div>
         <div class="form-group">
           <label for="reg-password">密码</label>
-          <input type="password" id="reg-password" placeholder="至少6位" required>
+          <div class="password-wrapper">
+            <input type="password" id="reg-password" placeholder="至少6位" required>
+            <span class="toggle-password" onclick="togglePassword('reg-password')">👁</span>
+          </div>
         </div>
         <div class="form-group">
           <label for="reg-confirm">确认密码</label>
-          <input type="password" id="reg-confirm" placeholder="再次输入密码" required>
+          <div class="password-wrapper">
+            <input type="password" id="reg-confirm" placeholder="再次输入密码" required>
+            <span class="toggle-password" onclick="togglePassword('reg-confirm')">👁</span>
+          </div>
         </div>
         <button type="submit" class="submit-btn">注册</button>
         <div class="register-link">
@@ -408,7 +441,7 @@
     </div>
   </div>
 
-  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v2.5.1</div>
+  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v2.5.2</div>
 
   <script>
     // Token 管理
@@ -432,6 +465,19 @@
     // 检查是否已登录
     if (getToken()) {
       window.location.href = '/index.html';
+    }
+
+    // 切换密码显示/隐藏
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.parentElement.querySelector('.toggle-password');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁';
+      }
     }
 
     // 显示错误

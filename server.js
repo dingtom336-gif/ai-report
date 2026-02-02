@@ -456,15 +456,18 @@ app.post('/api/auth/send-code', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { phone, code, email, password, username } = req.body;
 
-  // 用户名密码登录
+  // 用户名/邮箱 + 密码登录
   if (username && password) {
-    const user = Users.findByUsername(username);
+    // 判断是邮箱还是用户名
+    const isEmail = username.includes('@');
+    const user = isEmail ? Users.findByEmail(username) : Users.findByUsername(username);
+
     if (!user) {
-      return res.status(401).json({ error: '用户名或密码错误' });
+      return res.status(401).json({ error: '账号或密码错误' });
     }
 
     if (!verifyPassword(password, user.password_hash)) {
-      return res.status(401).json({ error: '用户名或密码错误' });
+      return res.status(401).json({ error: '账号或密码错误' });
     }
 
     Users.updateLastLogin(user.id);
@@ -476,6 +479,7 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        email: user.email,
         nickname: user.nickname,
         role: user.role,
         plan: user.plan
