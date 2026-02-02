@@ -315,7 +315,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 30px 24px;
+            padding: 30px 24px 100px;
         }
 
         /* 顶部标题 */
@@ -1087,10 +1087,16 @@
             margin-top: 8px;
         }
 
-        /* 润色按钮 */
+        /* 润色按钮 - 吸底悬浮 */
         .action-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            background: linear-gradient(to top, rgba(26, 26, 46, 0.98) 70%, transparent);
+            z-index: 100;
             text-align: center;
-            margin-top: 28px;
         }
 
         .btn-polish {
@@ -5254,7 +5260,7 @@
     </div>
 
     <!-- 版本号 -->
-    <div class="version-footer">v2.5.2</div>
+    <div class="version-footer">v2.5.3</div>
     <style>
         .version-footer {
             position: fixed;
