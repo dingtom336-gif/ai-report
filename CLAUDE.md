@@ -1,48 +1,56 @@
-# AI Report 项目
+# AI周报润色工具 (ai-report)
 
-## Claude 工作模式（重要）
+## 技术栈
+- 后端：Node.js + Express + better-sqlite3
+- 前端：原生HTML/CSS/JS（无框架）
+- AI服务：DeepSeek API（deepseek-chat模型）
+- 部署：Railway（GitHub自动部署）
 
-- **默认使用 Plan Mode**：每次开始新对话时，自动进入计划模式
-- 先分析需求、制定实施计划，等用户确认后再执行
-- 用户会手动输入命令切换到正常模式
+## 关键命令
+- 启动：npm start（端口3000，浏览器打开 http://localhost:3000）
+- 部署：git push origin main → Railway 2-5分钟自动部署
 
-## 项目信息
-- **项目名称**：ai-report（AI周报润色工具）
-- **本地开发路径**：/Users/xiaozhang/Desktop/claude-test/feedback-system
-- **Git 仓库路径**：/Users/xiaozhang/Desktop/claude-test/ai-report
-- **线上地址**：https://ai-report-production-1b54.up.railway.app/
-- **GitHub**：https://github.com/dingtom336-gif/ai-report
-- **技术栈**：Node.js + Express
+## 线上地址
+- 产品：https://ai-report-production-1b54.up.railway.app/
+- Railway控制台：https://railway.com/project/d850dd65-b337-4ad1-b273-1ff41bd085fe
 
-## 开发工作流（必须遵守）
+## 文件结构
+- server.js：所有API路由（待拆分到routes/）
+- db/database.js：数据库初始化和所有CRUD操作
+- middleware/auth.js：JWT验证中间件
+- middleware/paywall.js：付费墙中间件
+- public/index.html：主页面（当前3000+行，待拆分）
+- public/landing.html：落地页
+- public/login.html：登录页
+- public/history.html：历史记录页
+- public/admin.html：管理后台
+- public/submit.html：反馈提交页
 
-每次修改代码后，必须执行以下步骤：
+## 数据库表
+users, verification_codes, reports, templates, chat_history, usage_logs, feedback
 
-1. **同步文件**：将 feedback-system 的修改同步到 ai-report
-   ```bash
-   cp /Users/xiaozhang/Desktop/claude-test/feedback-system/server.js /Users/xiaozhang/Desktop/claude-test/ai-report/
-   cp /Users/xiaozhang/Desktop/claude-test/feedback-system/public/index.html /Users/xiaozhang/Desktop/claude-test/ai-report/public/
-   ```
+## 代码规范
+- API成功返回：{ success: true, data: {} }
+- API失败返回：{ success: false, message: '' }
+- 数据库操作全部写在 db/database.js，不散落在路由里
+- better-sqlite3 是同步API，不需要 await
 
-2. **提交推送**：
-   ```bash
-   cd /Users/xiaozhang/Desktop/claude-test/ai-report
-   git add .
-   git commit -m "修改描述"
-   git push origin main
-   ```
+## 部署注意
+- 端口必须用 process.env.PORT || 3000
+- 静态文件：path.join(__dirname, 'public')
+- 数据库：process.env.DATABASE_PATH || path.join(__dirname, 'data', 'app.db')
+- 不要用相对路径
 
-3. **通知用户**：告知"已推送，等待 2-5 分钟后刷新线上验证"
+## 环境变量（Railway控制台设置）
+- DEEPSEEK_API_KEY
+- JWT_SECRET
+- DATABASE_PATH
+- ADMIN_EMAIL
+- ADMIN_PASSWORD
 
-4. **验证上线**：https://ai-report-production-1b54.up.railway.app/
+## 当前版本
+v2.0.0
 
-## 关键原则
-
-- **不要让修改停留在本地**：改完就推，不要攒着
-- **用户测试环境是线上**：不是 localhost，是 Railway 部署的线上版本
-- **先推送再继续**：不要连续修改多次才推送一次
-
-## Railway 部署信息
-- 控制台：https://railway.com/project/d850dd65-b337-4ad1-b273-1ff41bd085fe
-- 部署方式：GitHub 自动部署（push 后自动触发）
-- 部署时间：约 2-5 分钟
+## 已知问题
+- index.html 超过3000行，需要拆分CSS和JS到独立文件
+- server.js 路由未拆分到 routes/ 目录
