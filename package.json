@@ -1,6 +1,6 @@
 {
   "name": "feedback-system",
-  "version": "1.0.0",
+  "version": "2.4.1",
   "description": "用户反馈收集系统",
   "main": "server.js",
   "type": "module",
