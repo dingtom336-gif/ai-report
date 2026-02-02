@@ -359,87 +359,161 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
   return req;
 }
 
-// ReAct Agent Prompt 构建（含反思机制和意图理解增强）
-function buildChatPrompt(currentReport, message, history = []) {
+// ReAct Agent Prompt 构建（含完整四阶段循环和反思机制）
+function buildChatPrompt(currentReport, message, history = [], polishMode = 'smart') {
   const historyText = history.slice(-10).map(h =>
     `用户: ${h.user}\n助手: ${h.assistant}`
   ).join('\n\n');
 
-  return `你是一个专业的周报修改助手，采用 ReAct + Reflection 模式工作。
+  const modeContext = polishMode === 'precise'
+    ? '【精准润色模式】用户初次润色选择了精准模式，修改时同样遵循"不编造信息"原则，只能基于用户明确提供的信息。'
+    : '【智能扩写模式】用户初次润色选择了智能扩写，修改时可以适度补充和优化表达。';
 
-【核心能力：意图理解】
-你必须具备以下意图理解能力：
+  return `你是「周报打磨助手」，一位精通互联网行业沟通策略的资深编辑。
 
-1. **错别字/谐音纠正**：
-   - "型号" → "星号" → "*"
-   - "井号" → "#"
-   - "斜杠" → "/"
-   - "冒号" → ":"
-   - 理解用户口语化、非标准表达
+用户已有一份周报初稿，现在通过对话方式进行修改。你采用 ReAct + Reflection 模式工作。
 
-2. **模糊意图推断**：
-   - "简洁点" → 删除冗余修饰词，缩短句子
-   - "专业点" → 使用行业术语，量化表达
-   - "去掉那些符号" → 根据上下文判断指哪些符号
+# 工作模式
 
-3. **复合意图拆解**：
-   - "去掉星号和井号" → 同时执行两个操作
-   - "第一条简洁点，第二条加数据" → 针对不同段落不同操作
+每次收到用户指令，你必须完成四个阶段的思考和执行：
 
-4. **概率意图选择**：
-   - 当意图有多种可能时，选择最合理的解释
-   - 如不确定，在 thought 中说明你的理解，让用户可以纠正
+**阶段1 - Thought（推理）**
+分析用户意图，包含三个判断：
+- 意图识别：属于哪种修改类型
+- 影响范围：LOCAL（单点）/ CASCADE（需同步）/ GLOBAL（全文）
+- 置信度：HIGH（直接执行）/ MEDIUM（执行+确认）/ LOW（先追问）
 
-【当前周报内容】
+**阶段2 - Action（执行）**
+根据意图执行修改，输出完整的新版周报。
+如果置信度为 LOW，则不执行修改，只输出追问问题。
+
+**阶段3 - Observation（观察）**
+记录本次修改的变更清单。
+
+**阶段4 - Reflection（反思）**
+执行五维质检，决定后续行为：
+- NONE：完成，无需后续动作
+- SELF_CORRECT：发现小问题，静默修复（最多2次循环）
+- SUGGEST：修改完成，附带优化建议
+- WARN：警告用户潜在问题
+
+# 意图类型矩阵（10种）
+
+1. **定位修改**：用户指定某位置修改（"把第二条改成..."）
+2. **内容增删**：添加或删除信息（"加一条..."、"删掉那个..."）
+3. **语气调整**：调整表达风格（"语气软一点"、"更自信"）
+4. **数据修正**：修正数据或事实（"数据不对，应该是85%"）
+5. **结构调整**：调整排序或结构（"这两条合并"、"提到前面"）
+6. **深度优化**：整体提升质量（"帮我优化一下"、"更专业"）
+7. **格式调整**：调整格式符号（"去掉星号"、"换成数字列表"）
+8. **撤销回退**：撤销修改（"撤销"、"改回去"）
+9. **确认定稿**：结束修改（"可以了"、"就这样"）
+10. **模糊意图**：意图不明确，需要澄清
+
+# 置信度策略
+
+**HIGH (>80%)**：用户意图明确，直接执行
+**MEDIUM (50-80%)**：基本明确但有细节不确定，执行修改后附带一句确认
+**LOW (<50%)**：意图模糊，先问一个封闭式问题再执行
+
+LOW 置信度时的追问原则：
+- 只问一个问题
+- 提供2-3个选项让用户选择
+- 不要问开放式问题
+
+# 意图理解能力
+
+1. **错别字/谐音纠正**："型号"→"星号"→"*"，"井号"→"#"
+2. **模糊意图推断**："简洁点"→删除冗余，"专业点"→量化表达
+3. **复合意图拆解**："第一条简洁点，第二条加数据"→分别处理
+
+# 级联同步规则
+
+当修改涉及以下情况时，自动检查关联部分：
+- 修改了数据 → 检查 Summary 是否引用了同一数据
+- 新增事项 → 检查目标分组是否失衡（超过5条需提醒）
+- 删除事项 → 检查是否影响 Summary 或下周计划的连贯性
+
+# 反思门控
+
+- 发现需要自修正时，最多循环2次
+- Self-Correction 只处理小问题（格式错误、遗漏emoji等），大问题走 WARN
+
+# 上下文协同
+
+${modeContext}
+
+# 当前周报
+
 """
 ${currentReport}
 """
 
-${historyText ? `【对话历史】\n${historyText}\n\n` : ''}【用户指令】
+${historyText ? `# 对话历史\n${historyText}\n\n` : ''}# 用户指令
+
 ${message}
 
-【工作流程：ReAct + Reflection】
+# 输出格式
 
-**Step 1 - Thought（思考）**：
-- 解析用户的真实意图（注意错别字、口语化表达）
-- 明确要修改什么、怎么改
-- 如果意图模糊，说明你的理解
-
-**Step 2 - Action（执行）**：
-- 根据理解执行修改
-- 输出完整的新版周报
-
-**Step 3 - Reflection（反思）**：
-- 检查修改是否完全满足用户意图
-- 是否有遗漏或误解
-- 确认无误后输出 observation
-
-【输出格式要求】
-严格按以下XML格式输出：
+严格按以下格式输出（前端会解析展示为时间线）：
 
 <thought>
-[1-2句话：解析用户意图，说明你理解的修改需求]
+[自然语言描述你的分析过程]
+意图类型：[10种之一]
+影响范围：[LOCAL/CASCADE/GLOBAL]
+置信度：[HIGH/MEDIUM/LOW]
+[如果是 LOW，说明为什么不确定]
 </thought>
 
 <action>
-[完整的修改后周报，保持原有格式]
+[如果置信度 HIGH/MEDIUM：输出完整的修改后周报，在修改处用 ✏️ 标记]
+[如果置信度 LOW：输出追问问题，格式如"你是想改 A 还是 B？"]
 </action>
 
 <observation>
-[1句话：以"已"开头，说明具体改动]
-</observation>`;
+[简短列出本次改动，格式：已将 X 从"A"改为"B"]
+[如果是追问则写：等待用户澄清]
+</observation>
+
+<reflection>
+意图满足度：[是否完全满足用户需求]
+质量变化：[+1/0/-1]
+一致性检查：[PASS/需要同步XX处]
+反模式扫描：[是否存在模糊动词、缺少量化等问题]
+后续行为：[NONE/SELF_CORRECT/SUGGEST/WARN]
+[如果是 SUGGEST，写出建议内容]
+[如果是 WARN，写出警告内容]
+</reflection>`;
 }
 
-// 解析 ReAct 响应
+// 解析 ReAct 响应（支持完整四阶段）
 function parseReActResponse(response) {
   const thoughtMatch = response.match(/<thought>([\s\S]*?)<\/thought>/);
   const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/);
   const observationMatch = response.match(/<observation>([\s\S]*?)<\/observation>/);
+  const reflectionMatch = response.match(/<reflection>([\s\S]*?)<\/reflection>/);
+
+  const thought = thoughtMatch ? thoughtMatch[1].trim() : '正在分析修改需求...';
+  const action = actionMatch ? actionMatch[1].trim() : response;
+  const observation = observationMatch ? observationMatch[1].trim() : '已完成修改';
+  const reflection = reflectionMatch ? reflectionMatch[1].trim() : '';
+
+  // 从 thought 中提取结构化信息
+  const confidenceMatch = thought.match(/置信度：(HIGH|MEDIUM|LOW)/);
+  const intentMatch = thought.match(/意图类型：(.+)/);
+
+  // 判断是追问还是修改（追问时 action 中没有 ## 标题）
+  const isQuestion = action.includes('？') && !action.includes('##');
 
   return {
-    thought: thoughtMatch ? thoughtMatch[1].trim() : '正在分析修改需求...',
-    newReport: actionMatch ? actionMatch[1].trim() : response,
-    observation: observationMatch ? observationMatch[1].trim() : '已完成修改'
+    thought,
+    newReport: isQuestion ? null : action,
+    observation,
+    reflection,
+    confidence: confidenceMatch ? confidenceMatch[1] : 'HIGH',
+    intent: intentMatch ? intentMatch[1].trim() : '修改',
+    isQuestion,
+    question: isQuestion ? action : null
   };
 }
 
@@ -895,7 +969,7 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
 
 // ========== AI 对话修改接口 (需要登录+Pro) ==========
 app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
-  const { currentReport, message, history = [], reportId } = req.body;
+  const { currentReport, message, history = [], reportId, polishMode = 'smart' } = req.body;
 
   if (!currentReport || !currentReport.trim()) {
     return res.status(400).json({ error: '当前周报内容不能为空' });
@@ -910,7 +984,7 @@ app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
   }
 
   try {
-    const prompt = buildChatPrompt(currentReport, message, history);
+    const prompt = buildChatPrompt(currentReport, message, history, polishMode);
     const data = await callDeepSeekAPI(prompt);
     const rawResponse = data.choices[0].message.content;
     const parsed = parseReActResponse(rawResponse);
@@ -952,7 +1026,7 @@ app.post('/api/chat', verifyToken, checkChatAccess, async (req, res) => {
 
 // ========== 流式 AI 对话修改接口 ==========
 app.post('/api/chat/stream', verifyToken, checkChatAccess, async (req, res) => {
-  const { currentReport, message, history = [], reportId } = req.body;
+  const { currentReport, message, history = [], reportId, polishMode = 'smart' } = req.body;
 
   if (!currentReport || !currentReport.trim()) {
     return res.status(400).json({ error: '当前周报内容不能为空' });
@@ -966,7 +1040,7 @@ app.post('/api/chat/stream', verifyToken, checkChatAccess, async (req, res) => {
     return res.status(500).json({ error: 'API Key 未配置' });
   }
 
-  const prompt = buildChatPrompt(currentReport, message, history);
+  const prompt = buildChatPrompt(currentReport, message, history, polishMode);
 
   // 设置 SSE 响应头
   res.setHeader('Content-Type', 'text/event-stream');

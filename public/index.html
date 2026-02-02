@@ -2052,6 +2052,10 @@
             background: rgba(52, 199, 89, 0.2);
         }
 
+        .react-step.reflection .react-step-icon {
+            background: rgba(236, 72, 153, 0.2);
+        }
+
         .react-step-label {
             font-size: 12px;
             font-weight: 600;
@@ -2062,6 +2066,7 @@
         .react-step.thought .react-step-label { color: #667eea; }
         .react-step.action .react-step-label { color: #ff9500; }
         .react-step.observation .react-step-label { color: #34c759; }
+        .react-step.reflection .react-step-label { color: #ec4899; }
 
         .react-step-content {
             font-size: 13px;
@@ -3775,6 +3780,7 @@
         let polishController = null;
         let isPolishing = false;
         let agentHistory = [];
+        let currentPolishMode = 'smart'; // 当前润色模式，传递给 AI 对话
 
         // 自定义角色相关状态
         let customRoles = [];
@@ -4170,6 +4176,9 @@
         async function startPolishWithMode(polishMode) {
             // 关闭弹窗
             closePolishModeModal();
+
+            // 保存润色模式，传递给后续的 AI 对话
+            currentPolishMode = polishMode;
 
             const content = document.getElementById('contentInput').value.trim();
             if (!content) {
@@ -4859,7 +4868,8 @@
                     body: JSON.stringify({
                         currentReport: currentEditableReport,
                         message,
-                        history: agentHistory.slice(-10)
+                        history: agentHistory.slice(-10),
+                        polishMode: currentPolishMode
                     })
                 });
 
@@ -4910,24 +4920,28 @@
                                 // 移除思考状态
                                 removeAgentThinking(thinkingId);
 
-                                // 添加 ReAct 响应
-                                addAgentReactResponse(data.parsed.thought, data.parsed.newReport, data.parsed.observation);
+                                const { thought, newReport, observation, reflection, isQuestion, question } = data.parsed;
+
+                                // 添加 ReAct 响应（时间线展示）
+                                addAgentReactResponse(thought, isQuestion ? question : newReport, observation, reflection, isQuestion);
 
                                 // 更新历史
-                                agentHistory.push({ user: message, assistant: data.parsed.observation });
+                                agentHistory.push({ user: message, assistant: observation });
 
-                                // 更新当前报告
-                                currentEditableReport = data.parsed.newReport;
-                                saveToUndoStack(data.parsed.newReport);
+                                // 如果不是追问，更新报告
+                                if (!isQuestion && newReport) {
+                                    currentEditableReport = newReport;
+                                    saveToUndoStack(newReport);
 
-                                // 更新预览
-                                document.getElementById('agentPreviewContent').textContent = data.parsed.newReport;
+                                    // 更新预览
+                                    document.getElementById('agentPreviewContent').textContent = newReport;
 
-                                // 同步到主输出
-                                document.getElementById('outputContent').textContent = data.parsed.newReport;
+                                    // 同步到主输出
+                                    document.getElementById('outputContent').textContent = newReport;
+                                }
 
                                 // 更新状态
-                                updateAgentStatus('ready', 'Ready');
+                                updateAgentStatus('ready', isQuestion ? '等待回复' : 'Ready');
                             } else if (data.type === 'error') {
                                 throw new Error(data.error);
                             }
@@ -5080,29 +5094,50 @@
             // 不自动滚动，让用户控制
         }
 
-        function addAgentReactResponse(thought, newReport, observation) {
+        function addAgentReactResponse(thought, newReport, observation, reflection = '', isQuestion = false) {
             const container = document.getElementById('agentMessages');
             const msgId = 'react-' + Date.now();
             const div = document.createElement('div');
             div.className = 'agent-message assistant';
-            // 简洁的结果显示 - thought 默认收起
+
+            // 时间线流程展示
             div.innerHTML = `
-                <div class="react-result">
-                    <div class="result-summary">
-                        <span class="result-icon">✅</span>
-                        <span class="result-text">${escapeHtml(observation)}</span>
-                    </div>
-                    <div class="result-thought collapsed" onclick="this.classList.toggle('collapsed')">
-                        <div class="thought-toggle">
-                            <span class="toggle-icon">💭</span>
-                            <span class="toggle-text">查看思考过程</span>
-                            <span class="toggle-arrow">▼</span>
+                <div class="react-container">
+                    <div class="react-step thought">
+                        <div class="react-step-header">
+                            <div class="react-step-icon">🧠</div>
+                            <span class="react-step-label">思考</span>
                         </div>
-                        <div class="thought-content">${escapeHtml(thought)}</div>
+                        <div class="react-step-content">${escapeHtml(thought)}</div>
                     </div>
+                    <div class="react-step action">
+                        <div class="react-step-header">
+                            <div class="react-step-icon">${isQuestion ? '❓' : '⚡'}</div>
+                            <span class="react-step-label">${isQuestion ? '追问' : '执行'}</span>
+                        </div>
+                        <div class="react-step-content">${isQuestion ? escapeHtml(newReport || '') : '修改已完成'}</div>
+                    </div>
+                    <div class="react-step observation">
+                        <div class="react-step-header">
+                            <div class="react-step-icon">👁</div>
+                            <span class="react-step-label">观察</span>
+                        </div>
+                        <div class="react-step-content">${escapeHtml(observation)}</div>
+                    </div>
+                    ${reflection ? `
+                    <div class="react-step reflection">
+                        <div class="react-step-header">
+                            <div class="react-step-icon">💭</div>
+                            <span class="react-step-label">反思</span>
+                        </div>
+                        <div class="react-step-content">${escapeHtml(reflection)}</div>
+                    </div>
+                    ` : ''}
+                    ${!isQuestion && newReport ? `
                     <button class="react-apply-btn" id="${msgId}" onclick="applyAgentResult(this, '${encodeURIComponent(newReport)}')">
                         ✓ 应用此修改到周报
                     </button>
+                    ` : ''}
                 </div>
             `;
             container.appendChild(div);
