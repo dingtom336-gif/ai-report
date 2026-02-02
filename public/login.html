@@ -237,18 +237,52 @@
       font-weight: 600;
     }
 
-    .dev-hint {
-      background: #fff3e0;
-      color: #f57c00;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 12px;
+    .auth-tabs {
+      display: flex;
       margin-bottom: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #666;
+    }
+
+    .auth-tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .tab-content {
       display: none;
     }
 
-    .dev-hint.show {
+    .tab-content.active {
       display: block;
+    }
+
+    .register-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .register-link a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
     }
 
     @media (max-width: 480px) {
@@ -284,11 +318,31 @@
     <div class="auth-form">
       <div id="error-message" class="error-message"></div>
       <div id="success-message" class="success-message"></div>
-      <div id="dev-hint" class="dev-hint">
-        开发模式：验证码固定为 <strong>123456</strong>
+
+      <!-- 登录方式 Tab -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('password')">密码登录</button>
+        <button class="auth-tab" onclick="switchTab('code')">验证码登录</button>
       </div>
 
-      <form id="login-form">
+      <!-- 密码登录表单 -->
+      <form id="password-form" class="tab-content active">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" placeholder="请输入用户名" maxlength="16" required>
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" placeholder="请输入密码" required>
+        </div>
+        <button type="submit" class="submit-btn">登录</button>
+        <div class="register-link">
+          没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a>
+        </div>
+      </form>
+
+      <!-- 验证码登录表单 -->
+      <form id="code-form" class="tab-content">
         <div class="form-group">
           <label for="phone">手机号</label>
           <div class="phone-input-group">
@@ -301,6 +355,26 @@
           <input type="text" id="code" placeholder="请输入6位验证码" maxlength="6" required>
         </div>
         <button type="submit" class="submit-btn">登录 / 注册</button>
+      </form>
+
+      <!-- 注册表单 -->
+      <form id="register-form" class="tab-content">
+        <div class="form-group">
+          <label for="reg-username">用户名</label>
+          <input type="text" id="reg-username" placeholder="4-16位字母或数字" maxlength="16" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">密码</label>
+          <input type="password" id="reg-password" placeholder="至少6位" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm">确认密码</label>
+          <input type="password" id="reg-confirm" placeholder="再次输入密码" required>
+        </div>
+        <button type="submit" class="submit-btn">注册</button>
+        <div class="register-link">
+          已有账号？<a href="javascript:void(0)" onclick="showLogin()">返回登录</a>
+        </div>
       </form>
 
       <div class="divider">或者</div>
@@ -334,7 +408,7 @@
     </div>
   </div>
 
-  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v1.9.0</div>
+  <div style="position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5);">v2.5.1</div>
 
   <script>
     // Token 管理
@@ -360,8 +434,6 @@
       window.location.href = '/index.html';
     }
 
-    // 开发模式提示默认隐藏，根据后端返回的 devMode 决定是否显示
-
     // 显示错误
     function showError(message) {
       const el = document.getElementById('error-message');
@@ -382,6 +454,34 @@
     function hideMessages() {
       document.getElementById('error-message').classList.remove('show');
       document.getElementById('success-message').classList.remove('show');
+    }
+
+    // Tab 切换
+    function switchTab(tab) {
+      hideMessages();
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      if (tab === 'password') {
+        document.querySelector('.auth-tab:first-child').classList.add('active');
+        document.getElementById('password-form').classList.add('active');
+      } else if (tab === 'code') {
+        document.querySelector('.auth-tab:last-child').classList.add('active');
+        document.getElementById('code-form').classList.add('active');
+      }
+    }
+
+    // 显示注册表单
+    function showRegister() {
+      hideMessages();
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('register-form').classList.add('active');
+    }
+
+    // 返回登录
+    function showLogin() {
+      switchTab('password');
     }
 
     // 发送验证码
@@ -422,14 +522,6 @@
 
         showSuccess('验证码已发送');
 
-        // 根据后端返回的 devMode 控制提示显示和验证码填充
-        if (data.devMode && data.code) {
-          document.getElementById('dev-hint').classList.add('show');
-          document.getElementById('code').value = data.code;
-        } else {
-          document.getElementById('dev-hint').classList.remove('show');
-        }
-
         // 开始倒计时
         countdown = 60;
         updateCountdown();
@@ -453,8 +545,52 @@
       }
     }
 
-    // 登录
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+    // 密码登录
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showError('请输入用户名和密码');
+        return;
+      }
+
+      const btn = e.target.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = '登录中...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '登录失败');
+        }
+
+        saveAuth(data.token, data.user);
+        showSuccess('登录成功，正在跳转...');
+
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 500);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '登录';
+      }
+    });
+
+    // 验证码登录
+    document.getElementById('code-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMessages();
 
@@ -499,6 +635,66 @@
       } finally {
         btn.disabled = false;
         btn.textContent = '登录 / 注册';
+      }
+    });
+
+    // 注册
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+
+      if (!username || !password || !confirm) {
+        showError('请填写所有字段');
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9]{4,16}$/.test(username)) {
+        showError('用户名需为4-16位字母或数字');
+        return;
+      }
+
+      if (password.length < 6) {
+        showError('密码至少6位');
+        return;
+      }
+
+      if (password !== confirm) {
+        showError('两次密码不一致');
+        return;
+      }
+
+      const btn = e.target.querySelector('.submit-btn');
+      btn.disabled = true;
+      btn.textContent = '注册中...';
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '注册失败');
+        }
+
+        saveAuth(data.token, data.user);
+        showSuccess('注册成功，正在跳转...');
+
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 500);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '注册';
       }
     });
 

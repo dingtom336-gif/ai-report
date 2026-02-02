@@ -25,12 +25,13 @@ db.pragma('journal_mode = WAL');
 
 // ========== 初始化表结构 (立即执行) ==========
 function initTables() {
-  // 用户表 (支持手机号登录)
+  // 用户表 (支持手机号/用户名登录)
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT UNIQUE,
       email TEXT UNIQUE,
+      username TEXT UNIQUE,
       password_hash TEXT,
       nickname TEXT,
       role TEXT DEFAULT 'user',
@@ -41,6 +42,13 @@ function initTables() {
       last_login TEXT
     )
   `);
+
+  // 迁移：为旧表添加 username 列
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN username TEXT UNIQUE`);
+  } catch (e) {
+    // 列已存在，忽略
+  }
 
   // 验证码表
   db.exec(`
@@ -308,6 +316,33 @@ function initAdminUser() {
     insertStmt.run(adminEmail, passwordHash, '管理员', 'admin', 'pro');
     console.log(`[Admin] 创建管理员账号: ${adminEmail}`);
   }
+
+  // 初始化 PRO 账号
+  initProUsers();
+}
+
+// 创建预设 PRO 账号
+function initProUsers() {
+  const proUsers = [
+    { username: 'tubaobei', password: '901224', nickname: '兔宝贝' },
+    { username: 'lurenjia', password: '123456', nickname: '路人甲' },
+    { username: 'lurenyi', password: '123456', nickname: '路人乙' }
+  ];
+
+  const checkStmt = db.prepare('SELECT * FROM users WHERE username = ?');
+  const insertStmt = db.prepare(`
+    INSERT INTO users (username, password_hash, nickname, role, plan)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+  for (const user of proUsers) {
+    const existing = checkStmt.get(user.username);
+    if (!existing) {
+      const passwordHash = bcrypt.hashSync(user.password, 10);
+      insertStmt.run(user.username, passwordHash, user.nickname, 'user', 'pro');
+      console.log(`[Pro] 创建 PRO 账号: ${user.username}`);
+    }
+  }
 }
 
 // 立即初始化表（必须在 prepared statements 之前）
@@ -331,6 +366,15 @@ const userQueries = {
 
   findByEmail: db.prepare(`
     SELECT * FROM users WHERE email = ?
+  `),
+
+  findByUsername: db.prepare(`
+    SELECT * FROM users WHERE username = ?
+  `),
+
+  createByUsername: db.prepare(`
+    INSERT INTO users (username, password_hash, nickname, role, plan)
+    VALUES (@username, @password_hash, @nickname, @role, @plan)
   `),
 
   findById: db.prepare(`
@@ -393,6 +437,22 @@ export const Users = {
 
   findByEmail(email) {
     return userQueries.findByEmail.get(email);
+  },
+
+  // 用户名登录/注册
+  findByUsername(username) {
+    return userQueries.findByUsername.get(username);
+  },
+
+  createByUsername(data) {
+    const result = userQueries.createByUsername.run({
+      username: data.username,
+      password_hash: data.password_hash,
+      nickname: data.nickname || data.username,
+      role: data.role || 'user',
+      plan: data.plan || 'free'
+    });
+    return result.lastInsertRowid;
   },
 
   findById(id) {

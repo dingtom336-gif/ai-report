@@ -441,13 +441,10 @@ app.post('/api/auth/send-code', async (req, res) => {
 
     UsageLogs.create({ action: 'send_code', metadata: { phone: phone.slice(0, 3) + '****' + phone.slice(-4) } });
 
-    // TODO: 接入短信服务后移除 code 返回
-    // 当前测试阶段始终返回验证码
+    // 验证码已保存，返回成功（不再返回验证码到前端）
     res.json({
       success: true,
-      message: '验证码已发送',
-      devMode: true,
-      code
+      message: '验证码已发送'
     });
   } catch (error) {
     console.error('发送验证码失败:', error);
@@ -455,9 +452,36 @@ app.post('/api/auth/send-code', async (req, res) => {
   }
 });
 
-// 手机号验证码登录（自动注册）
+// 登录（支持多种方式：用户名密码、手机号验证码、邮箱密码）
 app.post('/api/auth/login', async (req, res) => {
-  const { phone, code, email, password } = req.body;
+  const { phone, code, email, password, username } = req.body;
+
+  // 用户名密码登录
+  if (username && password) {
+    const user = Users.findByUsername(username);
+    if (!user) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+
+    if (!verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+
+    Users.updateLastLogin(user.id);
+    UsageLogs.create({ user_id: user.id, action: 'login' });
+
+    const token = generateToken(user);
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname,
+        role: user.role,
+        plan: user.plan
+      }
+    });
+  }
 
   // 管理员邮箱密码登录
   if (email && password) {
@@ -489,7 +513,7 @@ app.post('/api/auth/login', async (req, res) => {
 
   // 手机号验证码登录
   if (!phone || !code) {
-    return res.status(400).json({ error: '请输入手机号和验证码' });
+    return res.status(400).json({ error: '请输入登录信息' });
   }
 
   // 验证验证码
@@ -542,6 +566,59 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('登录失败:', error);
     res.status(500).json({ error: '登录失败，请稍后重试' });
+  }
+});
+
+// 用户名注册
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password } = req.body;
+
+  // 验证参数
+  if (!username || !password) {
+    return res.status(400).json({ error: '请输入用户名和密码' });
+  }
+
+  // 验证用户名格式（4-16位字母数字）
+  if (!/^[a-zA-Z0-9]{4,16}$/.test(username)) {
+    return res.status(400).json({ error: '用户名需为4-16位字母或数字' });
+  }
+
+  // 验证密码长度
+  if (password.length < 6) {
+    return res.status(400).json({ error: '密码至少6位' });
+  }
+
+  try {
+    // 检查用户名是否已存在
+    const existing = Users.findByUsername(username);
+    if (existing) {
+      return res.status(400).json({ error: '用户名已被使用' });
+    }
+
+    // 创建用户（默认 free 计划）
+    const userId = Users.createByUsername({
+      username,
+      password_hash: hashPassword(password),
+      nickname: username
+    });
+
+    const user = Users.findById(userId);
+    UsageLogs.create({ user_id: userId, action: 'register' });
+
+    const token = generateToken(user);
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname,
+        role: user.role,
+        plan: user.plan
+      }
+    });
+  } catch (error) {
+    console.error('注册失败:', error);
+    res.status(500).json({ error: '注册失败，请稍后重试' });
   }
 });
 
