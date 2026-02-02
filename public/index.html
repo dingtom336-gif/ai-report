@@ -634,6 +634,114 @@
             transform: none;
         }
 
+        /* 润色模式选择弹窗 */
+        .polish-mode-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .polish-mode-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .polish-mode-modal {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 420px;
+            padding: 24px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .polish-mode-overlay.show .polish-mode-modal {
+            transform: scale(1);
+        }
+        .polish-mode-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .polish-mode-header h3 {
+            color: #fff;
+            font-size: 18px;
+            margin: 0 0 8px 0;
+        }
+        .polish-mode-header p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            margin: 0;
+        }
+        .polish-mode-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .polish-mode-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .polish-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        .polish-mode-btn .mode-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .polish-mode-btn .mode-title .mode-icon {
+            font-size: 18px;
+        }
+        .polish-mode-btn .mode-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .polish-mode-btn.precise:hover {
+            border-color: #4ade80;
+        }
+        .polish-mode-btn.smart:hover {
+            border-color: #667eea;
+        }
+        .polish-mode-cancel {
+            margin-top: 16px;
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .polish-mode-cancel:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         /* 主体两栏 */
         .main-content {
             display: flex;
@@ -3384,6 +3492,33 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- 润色模式选择弹窗 -->
+    <div class="polish-mode-overlay" id="polishModeModal">
+        <div class="polish-mode-modal">
+            <div class="polish-mode-header">
+                <h3>选择润色模式</h3>
+                <p>根据需要选择合适的润色方式</p>
+            </div>
+            <div class="polish-mode-options">
+                <button class="polish-mode-btn precise" onclick="startPolishWithMode('precise')">
+                    <span class="mode-title">
+                        <span class="mode-icon">✏️</span>
+                        精准润色
+                    </span>
+                    <span class="mode-desc">严格基于原文内容，只优化表达和结构，不添加任何信息</span>
+                </button>
+                <button class="polish-mode-btn smart" onclick="startPolishWithMode('smart')">
+                    <span class="mode-title">
+                        <span class="mode-icon">🚀</span>
+                        智能扩写
+                    </span>
+                    <span class="mode-desc">基于原文要点扩展为完整周报，AI 补充内容会标注 [AI 建议]</span>
+                </button>
+            </div>
+            <button class="polish-mode-cancel" onclick="closePolishModeModal()">取消</button>
+        </div>
+    </div>
+
     <!-- 升级弹窗 -->
     <div class="upgrade-modal-overlay" id="upgradeModal">
         <div class="upgrade-modal">
@@ -4016,8 +4151,26 @@
         // 初始化语音输入
         initVoiceInput();
 
+        // ========== 润色模式选择弹窗 ==========
+        function polish() {
+            const content = document.getElementById('contentInput').value.trim();
+            if (!content) {
+                showToast('请输入周报内容', 'error');
+                return;
+            }
+            // 显示模式选择弹窗
+            document.getElementById('polishModeModal').classList.add('show');
+        }
+
+        function closePolishModeModal() {
+            document.getElementById('polishModeModal').classList.remove('show');
+        }
+
         // ========== 润色功能（流式输出） ==========
-        async function polish() {
+        async function startPolishWithMode(polishMode) {
+            // 关闭弹窗
+            closePolishModeModal();
+
             const content = document.getElementById('contentInput').value.trim();
             if (!content) {
                 showToast('请输入周报内容', 'error');
@@ -4045,7 +4198,8 @@
             // 显示进度条
             const progressSection = document.getElementById('progressSection');
             progressSection.classList.add('show');
-            document.getElementById('progressText').textContent = 'AI 正在润色中...';
+            const modeText = polishMode === 'precise' ? '精准润色' : '智能扩写';
+            document.getElementById('progressText').textContent = `AI 正在${modeText}中...`;
             isPolishing = true;
 
             // 创建 AbortController
@@ -4061,11 +4215,11 @@
 
             try {
                 // 尝试流式请求
-                console.log('[Polish] 发起流式请求...');
+                console.log('[Polish] 发起流式请求, 模式:', polishMode);
                 const response = await fetch('/api/polish/stream', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ content, role: selectedRole, template, useTemplate }),
+                    body: JSON.stringify({ content, role: selectedRole, template, useTemplate, polishMode }),
                     signal: polishController.signal
                 });
 
@@ -4148,7 +4302,7 @@
                     // 流式失败，回退到非流式
                     console.warn('流式请求失败，尝试非流式:', error.message);
                     try {
-                        await polishFallback(content, selectedRole, template, useTemplate, output);
+                        await polishFallback(content, selectedRole, template, useTemplate, output, polishMode);
                     } catch (fallbackError) {
                         showToast(fallbackError.message, 'error');
                         output.textContent = '';
@@ -4167,11 +4321,11 @@
         }
 
         // 非流式润色（fallback）
-        async function polishFallback(content, role, template, useTemplate, output) {
+        async function polishFallback(content, role, template, useTemplate, output, polishMode = 'smart') {
             const response = await fetch('/api/polish', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ content, role, template, useTemplate })
+                body: JSON.stringify({ content, role, template, useTemplate, polishMode })
             });
 
             const data = await response.json();
