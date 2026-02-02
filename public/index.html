@@ -3801,12 +3801,15 @@
 
             try {
                 // 尝试流式请求
+                console.log('[Polish] 发起流式请求...');
                 const response = await fetch('/api/polish/stream', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ content, role: selectedRole, template, useTemplate }),
                     signal: polishController.signal
                 });
+
+                console.log('[Polish] 响应状态:', response.status, 'Content-Type:', response.headers.get('content-type'));
 
                 // 非流式响应（错误情况）
                 if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
@@ -3823,13 +3826,18 @@
                 }
 
                 // 流式读取
+                console.log('[Polish] 开始流式读取...');
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+                let chunkCount = 0;
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
+                    if (done) {
+                        console.log('[Polish] 流读取完成, 共收到', chunkCount, '个chunk');
+                        break;
+                    }
 
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n');
@@ -3843,7 +3851,12 @@
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed.type === 'chunk') {
+                                chunkCount++;
                                 output.textContent += parsed.content;
+                                // 调试：每10个chunk打印一次
+                                if (chunkCount % 10 === 0) {
+                                    console.log('[Polish] 已收到', chunkCount, '个chunk, 当前长度:', output.textContent.length);
+                                }
                                 // 自动滚动到底部
                                 output.scrollTop = output.scrollHeight;
                             } else if (parsed.type === 'done') {

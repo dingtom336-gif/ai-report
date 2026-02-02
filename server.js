@@ -706,6 +706,12 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // 禁用 Nginx/代理缓冲
+  res.flushHeaders(); // 立即发送响应头
+
+  // 禁用 Nagle 算法，确保数据立即发送
+  if (res.socket) {
+    res.socket.setNoDelay(true);
+  }
 
   // 发送初始事件（用量信息）
   res.write(`data: ${JSON.stringify({ type: 'start', usageInfo })}\n\n`);
@@ -747,8 +753,8 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
   );
 
   // 客户端断开连接时清理
-  req.on('close', () => {
-    res.end();
+  res.on('close', () => {
+    // 响应关闭，无需额外处理
   });
 });
 
@@ -832,6 +838,11 @@ app.post('/api/chat/stream', verifyToken, checkChatAccess, async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  if (res.socket) {
+    res.socket.setNoDelay(true);
+  }
 
   res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
 
@@ -875,8 +886,9 @@ app.post('/api/chat/stream', verifyToken, checkChatAccess, async (req, res) => {
     }
   );
 
-  req.on('close', () => {
-    res.end();
+  // 客户端断开连接时清理
+  res.on('close', () => {
+    // 响应关闭，无需额外处理
   });
 });
 
