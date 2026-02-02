@@ -113,7 +113,7 @@ Step 2 - 智能补全：
 - 从内容推断最可能的业务目标
 - 缺少量化数据时，保留定性描述
 - 无法推断的信息用 [待补充：XX] 标记
-- 所有 AI 扩展的内容用 [AI 建议] 标注
+- 显性化隐含的因果关系
 
 Step 3 - SPARK 框架重构：
 
@@ -128,7 +128,7 @@ Step 3 - SPARK 框架重构：
    价值：对目标的推进意义
 
 ## A — 本周洞察
-1 个有深度的思考或发现（3-5 句话），如原文无素材则从问题中挖掘并标注 [AI 建议]
+1 个有深度的思考或发现（3-5 句话），如原文无明显素材则从问题/卡点中挖掘
 
 ## R — 风险与卡点
 最多 2 条，格式：
@@ -198,12 +198,6 @@ ${content}
   // 自定义角色 prompt
   if (customPrompt) {
     return customPrompt + '\n\n现在改写以下周报：\n' + content;
-  }
-
-  // 优先从数据库获取 prompt
-  const dbPrompt = Prompts.findByRoleType(role);
-  if (dbPrompt) {
-    return dbPrompt.content + '\n' + content;
   }
 
   // 根据润色模式选择提示词
