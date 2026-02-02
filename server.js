@@ -333,13 +333,36 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
   return req;
 }
 
-// ReAct Agent Prompt 构建
+// ReAct Agent Prompt 构建（含反思机制和意图理解增强）
 function buildChatPrompt(currentReport, message, history = []) {
   const historyText = history.slice(-10).map(h =>
     `用户: ${h.user}\n助手: ${h.assistant}`
   ).join('\n\n');
 
-  return `你是一个周报修改助手，采用ReAct模式工作。
+  return `你是一个专业的周报修改助手，采用 ReAct + Reflection 模式工作。
+
+【核心能力：意图理解】
+你必须具备以下意图理解能力：
+
+1. **错别字/谐音纠正**：
+   - "型号" → "星号" → "*"
+   - "井号" → "#"
+   - "斜杠" → "/"
+   - "冒号" → ":"
+   - 理解用户口语化、非标准表达
+
+2. **模糊意图推断**：
+   - "简洁点" → 删除冗余修饰词，缩短句子
+   - "专业点" → 使用行业术语，量化表达
+   - "去掉那些符号" → 根据上下文判断指哪些符号
+
+3. **复合意图拆解**：
+   - "去掉星号和井号" → 同时执行两个操作
+   - "第一条简洁点，第二条加数据" → 针对不同段落不同操作
+
+4. **概率意图选择**：
+   - 当意图有多种可能时，选择最合理的解释
+   - 如不确定，在 thought 中说明你的理解，让用户可以纠正
 
 【当前周报内容】
 """
@@ -349,30 +372,35 @@ ${currentReport}
 ${historyText ? `【对话历史】\n${historyText}\n\n` : ''}【用户指令】
 ${message}
 
-【你的工作流程】
-1. **Thought**: 分析用户想要什么修改，识别修改类型：
-   - 内容修改（增/删/改具体内容）
-   - 风格调整（语气、措辞、专业度）
-   - 结构调整（顺序、分组、格式）
-   - 细节优化（数据、用词、标点）
+【工作流程：ReAct + Reflection】
 
-2. **Action**: 执行修改，输出完整的新版周报
+**Step 1 - Thought（思考）**：
+- 解析用户的真实意图（注意错别字、口语化表达）
+- 明确要修改什么、怎么改
+- 如果意图模糊，说明你的理解
 
-3. **Observation**: 简要说明做了什么改动（一句话）
+**Step 2 - Action（执行）**：
+- 根据理解执行修改
+- 输出完整的新版周报
+
+**Step 3 - Reflection（反思）**：
+- 检查修改是否完全满足用户意图
+- 是否有遗漏或误解
+- 确认无误后输出 observation
 
 【输出格式要求】
-必须严格按以下XML格式输出，不要有其他内容：
+严格按以下XML格式输出：
 
 <thought>
-[你的分析，1-2句话]
+[1-2句话：解析用户意图，说明你理解的修改需求]
 </thought>
 
 <action>
-[完整的修改后周报，保持原有的markdown格式]
+[完整的修改后周报，保持原有格式]
 </action>
 
 <observation>
-[改动说明，1句话，以"已"开头]
+[1句话：以"已"开头，说明具体改动]
 </observation>`;
 }
 

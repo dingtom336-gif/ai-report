@@ -1989,6 +1989,85 @@
             box-shadow: none;
         }
 
+        /* 简洁结果显示 */
+        .react-result {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+
+        .result-summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .result-icon {
+            font-size: 16px;
+        }
+
+        .result-text {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .result-thought {
+            cursor: pointer;
+            margin: 8px 0;
+        }
+
+        .thought-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: rgba(102, 126, 234, 0.08);
+            border-radius: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .thought-toggle:hover {
+            background: rgba(102, 126, 234, 0.12);
+        }
+
+        .toggle-arrow {
+            margin-left: auto;
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .result-thought.collapsed .toggle-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .thought-content {
+            padding: 10px 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+
+        .result-thought.collapsed .thought-content {
+            max-height: 0;
+            padding: 0 12px;
+            margin-top: 0;
+            opacity: 0;
+        }
+
+        .react-result .react-apply-btn {
+            margin: 8px 0 0 0;
+            width: 100%;
+        }
+
         /* Agent 输入区 */
         .agent-input-area {
             padding: 20px;
@@ -2110,50 +2189,106 @@
             height: 22px;
         }
 
-        /* 加载动画 */
+        /* 简洁思考指示器 - 默认收起 */
         .agent-thinking {
-            padding: 20px;
+            padding: 12px 16px;
+            background: rgba(102, 126, 234, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.15);
         }
 
-        .thinking-animation {
+        .thinking-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
         }
 
-        .thinking-dots {
+        .thinking-indicator {
             display: flex;
-            gap: 4px;
+            align-items: center;
+            gap: 10px;
         }
 
-        .thinking-dots span {
-            width: 8px;
-            height: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .thinking-dots-mini {
+            display: flex;
+            gap: 3px;
+        }
+
+        .thinking-dots-mini span {
+            width: 5px;
+            height: 5px;
+            background: #667eea;
             border-radius: 50%;
-            animation: thinkingBounce 1.4s ease-in-out infinite;
+            animation: dotPulse 1.4s ease-in-out infinite;
         }
 
-        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+        .thinking-dots-mini span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots-mini span:nth-child(3) { animation-delay: 0.4s; }
 
-        @keyframes thinkingBounce {
-            0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
-            50% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
 
-        .thinking-text {
-            font-size: 13px;
+        .thinking-status {
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.6);
-            animation: textPulse 2s ease-in-out infinite;
+            animation: textFade 2s ease-in-out infinite;
         }
 
-        @keyframes textPulse {
+        @keyframes textFade {
             0%, 100% { opacity: 0.6; }
             50% { opacity: 1; }
         }
 
-        /* ReAct 思考链样式 */
+        .thinking-expand-icon {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .agent-thinking.collapsed .thinking-expand-icon {
+            transform: rotate(-90deg);
+        }
+
+        .thinking-detail {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            max-height: 200px;
+            opacity: 1;
+        }
+
+        .agent-thinking.collapsed .thinking-detail {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .thinking-step-mini {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .thinking-step-mini .step-icon {
+            flex-shrink: 0;
+        }
+
+        .thinking-step-mini .step-text {
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        /* 兼容旧样式 */
         .thinking-chain {
             margin-top: 16px;
             padding: 16px;
@@ -4668,89 +4803,60 @@
             const div = document.createElement('div');
             div.id = id;
             div.className = 'agent-message assistant';
+            // 默认收起的简洁思考指示器，点击可展开
             div.innerHTML = `
-                <div class="agent-thinking">
-                    <div class="thinking-animation">
-                        <div class="thinking-dots">
-                            <span></span><span></span><span></span>
+                <div class="agent-thinking collapsed">
+                    <div class="thinking-header" onclick="toggleThinkingExpand(this)">
+                        <div class="thinking-indicator">
+                            <div class="thinking-dots-mini">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span class="thinking-status">思考中...</span>
                         </div>
-                        <span class="thinking-text">Agent 正在思考...</span>
+                        <span class="thinking-expand-icon">▼</span>
                     </div>
-                    <div class="thinking-chain">
-                        <div class="thinking-step analyze" style="animation-delay: 0s;">
-                            <div class="thinking-step-icon">🔍</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">分析输入</div>
-                                <div class="thinking-step-desc typing">解析用户需求，提取关键修改意图...</div>
-                            </div>
-                        </div>
-                        <div class="thinking-step understand" style="animation-delay: 0.5s;">
-                            <div class="thinking-step-icon">🧠</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">理解上下文</div>
-                                <div class="thinking-step-desc">结合当前周报内容，理解修改范围...</div>
-                            </div>
-                        </div>
-                        <div class="thinking-step plan" style="animation-delay: 1s;">
-                            <div class="thinking-step-icon">📋</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">规划方案</div>
-                                <div class="thinking-step-desc">制定最优修改策略...</div>
-                            </div>
-                        </div>
-                        <div class="thinking-step execute" style="animation-delay: 1.5s;">
-                            <div class="thinking-step-icon">⚡</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">执行修改</div>
-                                <div class="thinking-step-desc">应用修改，生成优化结果...</div>
-                            </div>
+                    <div class="thinking-detail">
+                        <div class="thinking-step-mini">
+                            <span class="step-icon">🔍</span>
+                            <span class="step-text">分析意图...</span>
                         </div>
                     </div>
                 </div>
             `;
             container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            // 不自动滚动，让用户控制
 
-            // 启动打字机效果
-            startTypingEffect(id);
+            // 启动状态更新
+            startThinkingStatus(id);
 
             return id;
         }
 
-        // 打字机效果 - 模拟专业思考过程
-        function startTypingEffect(thinkingId) {
-            const thinkingSteps = [
-                { step: 'analyze', texts: ['解析用户需求...', '提取关键修改意图...', '识别目标段落...'] },
-                { step: 'understand', texts: ['理解周报结构...', '分析语义上下文...', '确定修改边界...'] },
-                { step: 'plan', texts: ['评估修改影响...', '制定优化策略...', '选择最佳方案...'] },
-                { step: 'execute', texts: ['应用语言模型...', '生成优化内容...', '校验输出质量...'] }
-            ];
+        // 切换思考详情展开/收起
+        function toggleThinkingExpand(header) {
+            const thinking = header.closest('.agent-thinking');
+            thinking.classList.toggle('collapsed');
+        }
 
-            let currentStepIdx = 0;
-            let currentTextIdx = 0;
+        // 简洁的状态更新
+        function startThinkingStatus(thinkingId) {
+            const statusTexts = ['分析意图...', '理解上下文...', '规划修改...', '生成内容...'];
+            let idx = 0;
 
-            const updateText = () => {
+            const update = () => {
                 const el = document.getElementById(thinkingId);
-                if (!el) return; // 元素已移除，停止动画
+                if (!el) return;
 
-                const step = thinkingSteps[currentStepIdx];
-                const stepEl = el.querySelector(`.thinking-step.${step.step} .thinking-step-desc`);
-                if (stepEl) {
-                    stepEl.textContent = step.texts[currentTextIdx];
-                    stepEl.classList.add('typing');
-                }
+                const statusEl = el.querySelector('.thinking-status');
+                const stepText = el.querySelector('.step-text');
+                if (statusEl) statusEl.textContent = statusTexts[idx];
+                if (stepText) stepText.textContent = statusTexts[idx];
 
-                currentTextIdx++;
-                if (currentTextIdx >= step.texts.length) {
-                    currentTextIdx = 0;
-                    currentStepIdx = (currentStepIdx + 1) % thinkingSteps.length;
-                }
-
-                // 继续循环
-                setTimeout(updateText, 1500 + Math.random() * 1000);
+                idx = (idx + 1) % statusTexts.length;
+                setTimeout(update, 2000);
             };
 
-            setTimeout(updateText, 2000);
+            setTimeout(update, 1500);
         }
 
         function removeAgentThinking(id) {
@@ -4765,79 +4871,53 @@
             // 提取已解析的部分进行预览
             let preview = content;
             let phase = 'analyze';
+            let phaseText = '分析意图...';
 
             // 尝试提取 thought 部分
             const thoughtMatch = content.match(/<thought>([\s\S]*?)(<\/thought>|$)/);
             if (thoughtMatch) {
                 preview = thoughtMatch[1].trim();
                 phase = 'understand';
+                phaseText = '理解上下文...';
             }
 
             // 检测更多阶段
-            if (content.includes('<new_report>')) phase = 'execute';
-            else if (content.includes('<observation>') || content.includes('</thought>')) phase = 'plan';
-
-            if (preview.length > 150) {
-                preview = preview.substring(0, 150) + '...';
+            if (content.includes('<action>')) {
+                phase = 'execute';
+                phaseText = '生成内容...';
+            } else if (content.includes('</thought>')) {
+                phase = 'plan';
+                phaseText = '规划修改...';
             }
 
-            // 确定当前步骤的高亮状态
-            const getStepClass = (step) => {
-                const phases = ['analyze', 'understand', 'plan', 'execute'];
-                const currentIdx = phases.indexOf(phase);
-                const stepIdx = phases.indexOf(step);
-                if (stepIdx < currentIdx) return 'completed';
-                if (stepIdx === currentIdx) return 'active';
-                return '';
-            };
+            // 截取预览
+            if (preview.length > 80) {
+                preview = preview.substring(0, 80) + '...';
+            }
+
+            // 检查当前是否是展开状态
+            const isExpanded = !el.querySelector('.agent-thinking')?.classList.contains('collapsed');
 
             el.innerHTML = `
-                <div class="agent-thinking streaming">
-                    <div class="thinking-animation">
-                        <div class="thinking-dots">
-                            <span></span><span></span><span></span>
+                <div class="agent-thinking ${isExpanded ? '' : 'collapsed'}">
+                    <div class="thinking-header" onclick="toggleThinkingExpand(this)">
+                        <div class="thinking-indicator">
+                            <div class="thinking-dots-mini">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span class="thinking-status">${phaseText}</span>
                         </div>
-                        <span class="thinking-text">Agent 正在处理...</span>
+                        <span class="thinking-expand-icon">▼</span>
                     </div>
-                    <div class="thinking-chain">
-                        <div class="thinking-step analyze ${getStepClass('analyze')}">
-                            <div class="thinking-step-icon">${getStepClass('analyze') === 'completed' ? '✓' : '🔍'}</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">分析输入</div>
-                                <div class="thinking-step-desc">已完成需求解析</div>
-                            </div>
+                    <div class="thinking-detail">
+                        <div class="thinking-step-mini">
+                            <span class="step-icon">${phase === 'execute' ? '⚡' : phase === 'plan' ? '📋' : phase === 'understand' ? '🧠' : '🔍'}</span>
+                            <span class="step-text">${escapeHtml(preview)}</span>
                         </div>
-                        <div class="thinking-step understand ${getStepClass('understand')}">
-                            <div class="thinking-step-icon">${getStepClass('understand') === 'completed' ? '✓' : '🧠'}</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">理解上下文</div>
-                                <div class="thinking-step-desc ${getStepClass('understand') === 'active' ? 'typing' : ''}">${getStepClass('understand') === 'active' ? '正在理解语义...' : '上下文分析完成'}</div>
-                            </div>
-                        </div>
-                        <div class="thinking-step plan ${getStepClass('plan')}">
-                            <div class="thinking-step-icon">${getStepClass('plan') === 'completed' ? '✓' : '📋'}</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">规划方案</div>
-                                <div class="thinking-step-desc ${getStepClass('plan') === 'active' ? 'typing' : ''}">${getStepClass('plan') === 'active' ? '制定修改策略...' : '方案已确定'}</div>
-                            </div>
-                        </div>
-                        <div class="thinking-step execute ${getStepClass('execute')}">
-                            <div class="thinking-step-icon">${getStepClass('execute') === 'active' ? '⚡' : '⏳'}</div>
-                            <div class="thinking-step-content">
-                                <div class="thinking-step-title">执行修改</div>
-                                <div class="thinking-step-desc ${getStepClass('execute') === 'active' ? 'typing' : ''}">${getStepClass('execute') === 'active' ? '生成优化内容...' : '等待执行...'}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="thinking-preview">
-                        <div class="preview-label">💭 实时思考</div>
-                        <div class="preview-content">${escapeHtml(preview)}</div>
                     </div>
                 </div>
             `;
-
-            const container = document.getElementById('agentMessages');
-            container.scrollTop = container.scrollHeight;
+            // 不自动滚动，让用户控制
         }
 
         function addAgentReactResponse(thought, newReport, observation) {
@@ -4845,28 +4925,20 @@
             const msgId = 'react-' + Date.now();
             const div = document.createElement('div');
             div.className = 'agent-message assistant';
+            // 简洁的结果显示 - thought 默认收起
             div.innerHTML = `
-                <div class="react-container">
-                    <div class="react-step thought">
-                        <div class="react-step-header">
-                            <div class="react-step-icon">💭</div>
-                            <span class="react-step-label">Thought</span>
-                        </div>
-                        <div class="react-step-content">${escapeHtml(thought)}</div>
+                <div class="react-result">
+                    <div class="result-summary">
+                        <span class="result-icon">✅</span>
+                        <span class="result-text">${escapeHtml(observation)}</span>
                     </div>
-                    <div class="react-step action">
-                        <div class="react-step-header">
-                            <div class="react-step-icon">⚡</div>
-                            <span class="react-step-label">Action</span>
+                    <div class="result-thought collapsed" onclick="this.classList.toggle('collapsed')">
+                        <div class="thought-toggle">
+                            <span class="toggle-icon">💭</span>
+                            <span class="toggle-text">查看思考过程</span>
+                            <span class="toggle-arrow">▼</span>
                         </div>
-                        <div class="react-step-content">执行周报修改...</div>
-                    </div>
-                    <div class="react-step observation">
-                        <div class="react-step-header">
-                            <div class="react-step-icon">✅</div>
-                            <span class="react-step-label">Observation</span>
-                        </div>
-                        <div class="react-step-content">${escapeHtml(observation)}</div>
+                        <div class="thought-content">${escapeHtml(thought)}</div>
                     </div>
                     <button class="react-apply-btn" id="${msgId}" onclick="applyAgentResult(this, '${encodeURIComponent(newReport)}')">
                         ✓ 应用此修改到周报
@@ -4874,7 +4946,7 @@
                 </div>
             `;
             container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            // 不自动滚动，让用户控制
         }
 
         function applyAgentResult(btn, encodedReport) {
@@ -5182,7 +5254,7 @@
     </div>
 
     <!-- 版本号 -->
-    <div class="version-footer">v2.4.2</div>
+    <div class="version-footer">v2.5.0</div>
     <style>
         .version-footer {
             position: fixed;
