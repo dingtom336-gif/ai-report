@@ -3115,6 +3115,9 @@
             color: rgba(255, 255, 255, 0.6);
         }
     </style>
+
+    <!-- Performance Monitor -->
+    <script src="/js/performance-monitor.js"></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -4485,7 +4488,7 @@
             // 动态加载 html2canvas
             if (!window.html2canvas) {
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.src = '/vendor/html2canvas.min.js';
                 script.onload = () => doExportImage();
                 document.head.appendChild(script);
             } else {

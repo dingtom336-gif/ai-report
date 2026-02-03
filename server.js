@@ -43,6 +43,80 @@ const proxyUrl = process.env.HTTP_PROXY || process.env.https_proxy || process.en
 const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : null;
 console.log('Proxy:', proxyUrl || 'disabled');
 
+// ========== 性能监测配置 ==========
+const API_TIMEOUT = 30000; // 30秒超时
+const MAX_CONCURRENT_REQUESTS = 5; // 最大并发数
+
+// API 性能统计
+const apiMetrics = {
+  polish: { count: 0, totalTime: 0, errors: 0, timeouts: 0 },
+  chat: { count: 0, totalTime: 0, errors: 0, timeouts: 0 },
+  deepseek: { count: 0, totalTime: 0, errors: 0, timeouts: 0 }
+};
+
+// 当前并发请求计数
+let currentConcurrentRequests = 0;
+const requestQueue = [];
+
+// 性能日志函数
+function logApiPerformance(endpoint, startTime, success, extra = {}) {
+  const duration = Date.now() - startTime;
+  const metric = apiMetrics[endpoint];
+  if (metric) {
+    metric.count++;
+    metric.totalTime += duration;
+    if (!success) metric.errors++;
+    if (extra.timeout) metric.timeouts++;
+  }
+
+  const logData = {
+    timestamp: new Date().toISOString(),
+    endpoint,
+    duration_ms: duration,
+    success,
+    avg_ms: metric ? Math.round(metric.totalTime / metric.count) : 0,
+    concurrent: currentConcurrentRequests,
+    ...extra
+  };
+
+  console.log(`[Performance] ${JSON.stringify(logData)}`);
+  return duration;
+}
+
+// 并发控制 - 获取执行槽
+function acquireSlot() {
+  return new Promise((resolve) => {
+    if (currentConcurrentRequests < MAX_CONCURRENT_REQUESTS) {
+      currentConcurrentRequests++;
+      resolve();
+    } else {
+      requestQueue.push(resolve);
+    }
+  });
+}
+
+// 并发控制 - 释放执行槽
+function releaseSlot() {
+  currentConcurrentRequests--;
+  if (requestQueue.length > 0) {
+    currentConcurrentRequests++;
+    const next = requestQueue.shift();
+    next();
+  }
+}
+
+// 获取性能指标API
+app.get('/api/metrics', requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      metrics: apiMetrics,
+      currentConcurrent: currentConcurrentRequests,
+      queueLength: requestQueue.length
+    }
+  });
+});
+
 // ========== 精准润色模式提示词 ==========
 const PRECISE_PROMPT = `你是「周报编辑」，一位严谨的文字工作者。你的职责是：在完全保留用户原始信息的前提下，优化文字表达、调整结构层次、提升专业度。
 
@@ -208,10 +282,13 @@ ${content}
   }
 }
 
-// 调用 DeepSeek API
-function callDeepSeekAPI(prompt) {
+// 调用 DeepSeek API（带超时和性能监测）
+function callDeepSeekAPI(prompt, timeout = API_TIMEOUT) {
   return new Promise((resolve, reject) => {
+    const startTime = Date.now();
     const apiKey = process.env.DEEPSEEK_API_KEY;
+    let timeoutId = null;
+    let isCompleted = false;
 
     const postData = JSON.stringify({
       model: 'deepseek-chat',
@@ -235,31 +312,58 @@ function callDeepSeekAPI(prompt) {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        if (isCompleted) return;
+        isCompleted = true;
+        clearTimeout(timeoutId);
+
         try {
           const parsed = JSON.parse(data);
           if (res.statusCode !== 200) {
+            logApiPerformance('deepseek', startTime, false, { status: res.statusCode });
             const error = new Error(parsed.error?.message || 'API 调用失败');
             error.status = res.statusCode;
             error.data = parsed;
             reject(error);
           } else {
+            logApiPerformance('deepseek', startTime, true);
             resolve(parsed);
           }
         } catch (e) {
+          logApiPerformance('deepseek', startTime, false, { parseError: true });
           reject(new Error('解析响应失败'));
         }
       });
     });
 
-    req.on('error', (e) => reject(e));
+    // 超时处理
+    timeoutId = setTimeout(() => {
+      if (isCompleted) return;
+      isCompleted = true;
+      req.destroy();
+      logApiPerformance('deepseek', startTime, false, { timeout: true });
+      reject(new Error(`DeepSeek API 超时 (${timeout}ms)`));
+    }, timeout);
+
+    req.on('error', (e) => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timeoutId);
+      logApiPerformance('deepseek', startTime, false, { error: e.message });
+      reject(e);
+    });
+
     req.write(postData);
     req.end();
   });
 }
 
-// 流式调用 DeepSeek API
-function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
+// 流式调用 DeepSeek API（带超时和性能监测）
+function callDeepSeekAPIStream(prompt, onChunk, onDone, onError, timeout = API_TIMEOUT) {
+  const startTime = Date.now();
+  let firstChunkTime = null;
   const apiKey = process.env.DEEPSEEK_API_KEY;
+  let timeoutId = null;
+  let isCompleted = false;
 
   const postData = JSON.stringify({
     model: 'deepseek-chat',
@@ -280,11 +384,27 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
     }
   };
 
+  // Reset timeout on each chunk received
+  const resetTimeout = () => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      if (isCompleted) return;
+      isCompleted = true;
+      req.destroy();
+      logApiPerformance('deepseek', startTime, false, { timeout: true, stream: true });
+      onError(new Error(`DeepSeek API 流式超时 (${timeout}ms 无数据)`));
+    }, timeout);
+  };
+
   const req = https.request(options, (res) => {
     if (res.statusCode !== 200) {
       let errorData = '';
       res.on('data', (chunk) => errorData += chunk);
       res.on('end', () => {
+        if (isCompleted) return;
+        isCompleted = true;
+        clearTimeout(timeoutId);
+        logApiPerformance('deepseek', startTime, false, { status: res.statusCode, stream: true });
         try {
           const parsed = JSON.parse(errorData);
           onError(new Error(parsed.error?.message || `API 错误: ${res.statusCode}`));
@@ -299,6 +419,14 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
     let fullContent = '';
 
     res.on('data', (chunk) => {
+      resetTimeout(); // Reset timeout on each chunk
+
+      // Record first chunk time
+      if (!firstChunkTime) {
+        firstChunkTime = Date.now() - startTime;
+        console.log(`[Performance] First chunk: ${firstChunkTime}ms`);
+      }
+
       buffer += chunk.toString();
 
       // 处理 SSE 格式数据
@@ -311,6 +439,14 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
 
         const data = trimmed.slice(5).trim();
         if (data === '[DONE]') {
+          if (isCompleted) return;
+          isCompleted = true;
+          clearTimeout(timeoutId);
+          logApiPerformance('deepseek', startTime, true, {
+            stream: true,
+            firstChunk_ms: firstChunkTime,
+            contentLength: fullContent.length
+          });
           onDone(fullContent);
           return;
         }
@@ -329,6 +465,10 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
     });
 
     res.on('end', () => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timeoutId);
+
       // 处理剩余 buffer
       if (buffer.trim()) {
         const trimmed = buffer.trim();
@@ -346,13 +486,32 @@ function callDeepSeekAPIStream(prompt, onChunk, onDone, onError) {
           }
         }
       }
+      logApiPerformance('deepseek', startTime, true, {
+        stream: true,
+        firstChunk_ms: firstChunkTime,
+        contentLength: fullContent.length
+      });
       onDone(fullContent);
     });
 
-    res.on('error', onError);
+    res.on('error', (e) => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timeoutId);
+      logApiPerformance('deepseek', startTime, false, { stream: true, error: e.message });
+      onError(e);
+    });
   });
 
-  req.on('error', onError);
+  req.on('error', (e) => {
+    if (isCompleted) return;
+    isCompleted = true;
+    clearTimeout(timeoutId);
+    logApiPerformance('deepseek', startTime, false, { stream: true, error: e.message });
+    onError(e);
+  });
+
+  resetTimeout(); // Start initial timeout
   req.write(postData);
   req.end();
 
@@ -807,8 +966,18 @@ app.post('/api/polish', optionalToken, checkRoleAccess, async (req, res) => {
   }
 
   try {
+    // Acquire concurrent slot
+    await acquireSlot();
+    const polishStartTime = Date.now();
+
     const prompt = buildPrompt(content, finalRole, template, useTemplate, customPrompt, polishMode);
-    const data = await callDeepSeekAPI(prompt);
+    let data;
+    try {
+      data = await callDeepSeekAPI(prompt);
+    } finally {
+      releaseSlot();
+    }
+    logApiPerformance('polish', polishStartTime, true);
     const result = data.choices[0].message.content;
 
     // 登录用户保存周报
@@ -922,6 +1091,18 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
     res.socket.setNoDelay(true);
   }
 
+  // Acquire concurrent slot
+  await acquireSlot();
+  const polishStartTime = Date.now();
+  let slotReleased = false;
+
+  const releaseSlotOnce = () => {
+    if (!slotReleased) {
+      slotReleased = true;
+      releaseSlot();
+    }
+  };
+
   // 发送初始事件（用量信息）
   res.write(`data: ${JSON.stringify({ type: 'start', usageInfo })}\n\n`);
 
@@ -933,6 +1114,9 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
     },
     // onDone
     (fullContent) => {
+      releaseSlotOnce();
+      logApiPerformance('polish', polishStartTime, true, { stream: true });
+
       // 登录用户保存周报
       let reportId = null;
       if (req.user) {
@@ -955,6 +1139,8 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
     },
     // onError
     (error) => {
+      releaseSlotOnce();
+      logApiPerformance('polish', polishStartTime, false, { stream: true, error: error.message });
       console.error('流式 API 调用失败:', error.message);
       res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
       res.end();
@@ -963,7 +1149,7 @@ app.post('/api/polish/stream', optionalToken, checkRoleAccess, async (req, res) 
 
   // 客户端断开连接时清理
   res.on('close', () => {
-    // 响应关闭，无需额外处理
+    releaseSlotOnce();
   });
 });
 
